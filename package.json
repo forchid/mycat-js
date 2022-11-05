@@ -1,0 +1,9 @@
+{
+  "name": "mycat-js",
+  "version": "1.6.7.6",
+  "description": "A branch of MyCat-Server based on Fibjs",
+  "repository": "https://github.com/forchid/mycat-js.git",
+  "keywords": "MyCat, fibjs, javascript, coroutine, database, DB cluster, DB proxy",
+  "author": "little-pan",
+  "license": "GPLv2"
+}
