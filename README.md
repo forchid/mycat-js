@@ -1,3 +1,4 @@
 # mycat-js
 A branch of [MyCat-Server](https://github.com/MyCATApache/Mycat-Server) based on [Fibjs](https://github.com/fibjs/fibjs).
-Try to solve the complicated NIO asynchronously programming issue in NyCat-server by using fibjs coroutine.
+Try to solve the complicated NIO asynchronously programming issue in MyCat-server by using fibjs coroutine, also 
+optimize the MyCat-server.
