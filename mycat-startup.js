@@ -24,6 +24,7 @@ class MycatStartup {
             }
         } catch (e) {
             console.error('MyCAT Server startup error: %s', e);
+            if (e.stack) console.error(e.stack);
             process.exit(-1);
         }
     }

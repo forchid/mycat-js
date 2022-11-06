@@ -33,6 +33,10 @@ class SystemConfig {
         return this.#PROP_SYS_HOME;
     }
 
+    static get DEFAULT_POOL_SIZE() {
+        return 128;
+    }
+
     static getHomePath() {
         // Home path lookup: argv, env, cwd, BIN
         const prop = this.SYS_HOME;
@@ -46,12 +50,12 @@ class SystemConfig {
 
         home = process.cwd();
         let conf = path.resolve(home, "conf");
-        if (fs.existsSync(conf) && fs.stat(conf).isDirectory()) 
+        if (fs.exists(conf) && fs.stat(conf).isDirectory()) 
             return props[prop] = home;
 
         home = path.resolve(__dirname, '..');
         conf = path.resolve(home, "conf");
-        if (fs.existsSync(conf) && fs.stat(conf).isDirectory()) 
+        if (fs.exists(conf) && fs.stat(conf).isDirectory()) 
             return props[prop] = home;
         else 
             return null;
