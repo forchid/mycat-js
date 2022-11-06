@@ -25,10 +25,11 @@
 			  writeType="0" dbType="mysql" dbDriver="jdbc" switchType="1"  slaveThreshold="100">
 		<heartbeat>select user()</heartbeat>
 		<!-- can have multi write hosts -->
-		<writeHost host="hostM1" url="jdbc:mysql://localhost:3306" user="root"
-				   password="root">
+		<writeHost host="hostM1" url="jdbc:mysql://localhost:3306" user="root" password="root">
+			<readHost host="hostS1" url="jdbc:mysql://localhost:3316" 
+				user="root" password="123456" />
 		</writeHost>
-		<!-- <writeHost host="hostM2" url="localhost:3316" user="root" password="123456"/> -->
+		<writeHost host="hostM2" url="jdbc:mysql://localhost:3326" user="root" password="123456"/>
 	</dataHost>
 	<!--
 		<dataHost name="sequoiadb1" maxCon="1000" minCon="1" balance="0" dbType="sequoiadb" dbDriver="jdbc">

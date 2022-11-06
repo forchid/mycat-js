@@ -15,6 +15,8 @@ class DataHostConfig {
     #isShowSlaveSql = false;
     #isShowClusterSql = false;
     #heartbeatSQL = null;
+    #writeHosts;
+    #readHosts;
 
     maxCon = SystemConfig.DEFAULT_POOL_SIZE;
     minCon = 10;
@@ -28,11 +30,13 @@ class DataHostConfig {
     notSwitch = DataHostConfig.CAN_SWITCH_DS;
     maxRetryCount = 3;
 
-    constructor(name, dbType, dbDriver, writeDbConfs, readHostsMap, 
+    constructor(name, dbType, dbDriver, writeHosts, readHosts, 
         switchType, slaveThreshold, tempReadHostAvailable) {
         this.#name = name;
         this.#dbType = dbType;
         this.#dbDriver = dbDriver;
+        this.#writeHosts = writeHosts;
+        this.#readHosts = readHosts;
         this.#switchType = switchType;
         this.#slaveThreshold = slaveThreshold;
         this.#tempReadHostAvailable = tempReadHostAvailable;
@@ -48,6 +52,14 @@ class DataHostConfig {
 
     get dbDriver() {
         return this.#dbDriver;
+    }
+
+    get writeHosts() {
+        return this.#writeHosts;
+    }
+
+    get readHosts() {
+        return this.#readHosts;
     }
 
     get switchType() {

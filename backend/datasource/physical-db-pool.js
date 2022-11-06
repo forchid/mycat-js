@@ -15,6 +15,10 @@ class PhysicalDBPool {
     static get LOG_TIME() {
         return 300000;
     }
+
+    static get WEIGHT() {
+        return 0;
+    }
 }
 
 module.exports = PhysicalDBPool;
