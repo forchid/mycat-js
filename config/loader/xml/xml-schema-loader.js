@@ -19,21 +19,33 @@ class XMLSchemaLoader {
             const home = SystemConfig.getHomePath();
             schemaFile = path.resolve(home, "conf", XMLSchemaLoader.#DEFAULT_XML);
         }
-        this.load(XMLSchemaLoader.#DEFAULT_DTD, schemaFile);
+        let parser = new Parser(this);
+        parser.parse(XMLSchemaLoader.#DEFAULT_DTD, schemaFile);
     }
 
     get dataHosts() {
         return this.#dataHosts;
     }
-    
-    load(dtdFile, schemaFile) {
+
+} // XMLSchemaLoader
+
+class Parser {
+
+    #loader;
+
+    constructor(loader) {
+        this.#loader = loader;
+    }
+
+    parse(dtdFile, schemaFile) {
         let source = fs.readFile(schemaFile, 'utf-8');
         let root = xml.parse(source);
 
-        this.loadDataHosts(root);
+        this.parseDataHosts(root);
     }
 
-    loadDataHosts(root) {
+    parseDataHosts(root) {
+        const dataHosts = this.#loader.dataHosts;
         let hosts = root.getElementsByTagName('dataHost');
         let n = hosts.length;
 
@@ -46,7 +58,7 @@ class XMLSchemaLoader {
                 throw new ConfigError(`No name attr in the dataHost ${i + 1}`);
             }
             const name = attr.value;
-            if (this.#dataHosts[name]) {
+            if (dataHosts[name]) {
                 throw new ConfigError(`The dataHost ${i + 1} name '${name}' duplicated`);
             }
 
@@ -90,7 +102,7 @@ class XMLSchemaLoader {
             config.notSwitch = notSwitch;
             config.maxRetryCount = maxRetryCount;
 
-            this.#dataHosts[name] = config;
+            dataHosts[name] = config;
         }
     }
 
@@ -137,6 +149,6 @@ class XMLSchemaLoader {
         return n;
     }
 
-}
+} // Parser
 
 module.exports = XMLSchemaLoader;
