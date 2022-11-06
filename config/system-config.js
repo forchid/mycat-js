@@ -34,6 +34,7 @@ class SystemConfig {
     }
 
     static getHomePath() {
+        // Home path lookup: argv, env, cwd, BIN
         const prop = this.SYS_HOME;
         const props = this.#ARGV.props;
         let home = props[prop];
@@ -42,7 +43,18 @@ class SystemConfig {
         const env = process.env;
         home = env[prop];
         if (home) return props[prop] = home;
-        else return props[prop] = path.resolve(__dirname, '..');
+
+        home = process.cwd();
+        let conf = path.resolve(home, "conf");
+        if (fs.existsSync(conf) && fs.stat(conf).isDirectory()) 
+            return props[prop] = home;
+
+        home = path.resolve(__dirname, '..');
+        conf = path.resolve(home, "conf");
+        if (fs.existsSync(conf) && fs.stat(conf).isDirectory()) 
+            return props[prop] = home;
+        else 
+            return null;
     }
 
     static resetLogger() {
