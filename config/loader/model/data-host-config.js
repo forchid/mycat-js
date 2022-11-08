@@ -17,6 +17,7 @@ class DataHostConfig {
     #heartbeatSQL = null;
     #writeHosts;
     #readHosts;
+    #dataNodes = new Set();
 
     maxCon = SystemConfig.DEFAULT_POOL_SIZE;
     minCon = 10;
@@ -93,6 +94,10 @@ class DataHostConfig {
 
         find = DataHostConfig.#HB_CLS_SQL_PATTERN.test(heartbeatSQL);
         if (find) this.#isShowClusterSql = true;
+    }
+
+    addDataNode(nodeName) {
+        this.#dataNodes.add(nodeName);
     }
 
     static get CAN_SWITCH_DS() {

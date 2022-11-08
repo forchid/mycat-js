@@ -23,8 +23,8 @@ class MycatStartup {
                 console.log('MyCAT Server startup successfully. See logs in %s', logFile);
             }
         } catch (e) {
-            console.error('MyCAT Server startup error: %s', e);
-            if (e.stack) console.error(e.stack);
+            if (e.stack) console.error(`MyCAT Server startup error: \n${e.stack}`);
+            else console.error('MyCAT Server startup error: %s', e);
             process.exit(-1);
         }
     }

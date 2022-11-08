@@ -5,7 +5,8 @@
   "repository": "https://github.com/forchid/mycat-js.git",
   "keywords": "MyCat, fibjs, javascript, coroutine, database, DB cluster, DB proxy",
   "scripts": {
-    "start": "fibjs mycat-startup.js"
+    "start": "fibjs mycat-startup.js",
+    "test": "fibjs test/run-all.js"
   },
   "author": "little-pan",
   "license": "GPLv2"

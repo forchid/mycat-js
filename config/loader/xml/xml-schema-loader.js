@@ -2,12 +2,14 @@ const SystemConfig = require('../../system-config');
 const ConfigError = require('../../config-error');
 const DataHostConfig = require('../model/data-host-config');
 const PhysicalDBPool = require('../../../backend/datasource/physical-db-pool');
+const StringSplitter = require('../../../util/string-splitter');
 
 const fs = require('fs');
 const path = require('path');
 const xml = require('xml');
 const url = require('url');
 const DBHostConfig = require('../model/db-host-config');
+const DataNodeConfig = require('../model/data-node-config');
 
 class XMLSchemaLoader {
 
@@ -15,6 +17,7 @@ class XMLSchemaLoader {
     static #DEFAULT_XML = "schema.xml";
 
     #dataHosts = new Map();
+    #dataNodes = new Map();
 
     constructor(schemaFile, ruleFile) {
         if (!schemaFile) {
@@ -25,9 +28,9 @@ class XMLSchemaLoader {
         parser.parse(XMLSchemaLoader.#DEFAULT_DTD, schemaFile);
     }
 
-    get dataHosts() {
-        return this.#dataHosts;
-    }
+    get dataHosts() { return this.#dataHosts; }
+
+    get dataNodes() { return this.#dataNodes; }
 
 } // XMLSchemaLoader
 
@@ -44,6 +47,66 @@ class Parser {
         let root = xml.parse(source);
 
         this.parseDataHosts(root);
+        this.parseDataNodes(root);
+    }
+
+    parseDataNodes(root) {
+        let nodeElems = root.getElementsByTagName('dataNode');
+        let n = nodeElems.length;
+
+        for (let i = 0; i < n; ++i) {
+            let nodeElem = nodeElems[i];
+            let attrs = nodeElem.attributes;
+            let attr = attrs.getNamedItem('name');
+            const name = attr? attr.value.trim(): null;
+            if (!name) {
+                throw new ConfigError(`dataNode ${i + 1} no name attr value!`);
+            }
+            const database = this.parseStrAttr('database', nodeElem, name);
+            const dataHost = this.parseStrAttr('dataHost', nodeElem, name);
+            console.debug(`Parse dataNode '${name}': dataHost '${dataHost}', database '${database}'`);
+            let [fi, se, th] = [',', '$', '-'];
+            const dnNames = StringSplitter.range3(name, fi, se, th);
+            const databases = StringSplitter.range3(database, fi, se, th);
+            const dataHosts = StringSplitter.range3(dataHost, fi, se, th);
+
+            let n = dnNames.length;
+            if (n != dataHosts.length * databases.length) {
+                throw new ConfigError(`dataNode '${name}' define error: name count != dataHost count * database count`);
+            }
+            if (n > 1) {
+                let hdNames = this.mergeHostDatabases(dataHosts, databases);
+                hdNames.forEach((hd, i) => 
+                    this.createDataNode(dnNames[i], hd.database, hd.dataHost));
+            } else {
+                this.createDataNode(name, database, dataHost);
+            }
+        }
+    }
+
+    mergeHostDatabases(dataHosts, databases) {
+        const res = [];
+        dataHosts.forEach(dataHost => 
+            databases.forEach(database => 
+                res.push({database, dataHost})));
+        return res;
+    }
+
+    createDataNode(name, database, dataHost) {
+        console.debug(`Create dataNode '${name}': dataHost '${dataHost}', database '${database}'`);
+        const conf = new DataNodeConfig(name, database, dataHost);
+        const dataHosts = this.#loader.dataHosts;
+        const dataNodes = this.#loader.dataNodes;
+
+        if (dataNodes.has(name)) {
+            throw new ConfigError(`dataNode '${name}' duplicated!`);
+        }
+        const hostConf = dataHosts.get(dataHost);
+        if (!hostConf) {
+            throw new ConfigError(`dataNode '${name}' references dataHost: '${dataHost}' not exists!`);
+        }
+        hostConf.addDataNode(name);
+        dataNodes.set(name, conf);
     }
 
     parseDataHosts(root) {
