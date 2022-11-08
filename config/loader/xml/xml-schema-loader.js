@@ -1,28 +1,34 @@
 const SystemConfig = require('../../system-config');
 const ConfigError = require('../../config-error');
-const DataHostConfig = require('../model/data-host-config');
-const PhysicalDBPool = require('../../../backend/datasource/physical-db-pool');
+const DataHostConfig = require('../../model/data-host-config');
+const PhysicalDBPool = require('../../../backend/data-source/physical-db-pool');
 const StringSplitter = require('../../../util/string-splitter');
+const DBHostConfig = require('../../model/db-host-config');
+const DataNodeConfig = require('../../model/data-node-config');
+const XMLRuleLoader = require('./xml-rule-loader');
 
 const fs = require('fs');
 const path = require('path');
 const xml = require('xml');
 const url = require('url');
-const DBHostConfig = require('../model/db-host-config');
-const DataNodeConfig = require('../model/data-node-config');
 
 class XMLSchemaLoader {
 
-    static #DEFAULT_DTD = "schema.dtd"; // Ignore: no dtd check feature in fibjs xml
-    static #DEFAULT_XML = "schema.xml";
+    // Ignore DTD: no dtd validation in fibjs xml
+    static #DEFAULT_DTD = 'schema.dtd';
+    static #DEFAULT_XML = 'schema.xml';
 
     #dataHosts = new Map();
     #dataNodes = new Map();
+    #tableRules= new Map();
 
     constructor(schemaFile, ruleFile) {
+        let ruleLoader = new XMLRuleLoader(ruleFile);
+        this.#tableRules = ruleLoader.tableRules;
+
         if (!schemaFile) {
-            const home = SystemConfig.getHomePath();
-            schemaFile = path.resolve(home, "conf", XMLSchemaLoader.#DEFAULT_XML);
+            const baseDir = SystemConfig.confPath;
+            schemaFile = path.resolve(baseDir, XMLSchemaLoader.#DEFAULT_XML);
         }
         let parser = new Parser(this);
         parser.parse(XMLSchemaLoader.#DEFAULT_DTD, schemaFile);
@@ -31,6 +37,8 @@ class XMLSchemaLoader {
     get dataHosts() { return this.#dataHosts; }
 
     get dataNodes() { return this.#dataNodes; }
+
+    get tableRules() { return this.#tableRules; }
 
 } // XMLSchemaLoader
 

@@ -1,8 +1,9 @@
 class StringSplitter {
 
-    // Split src into a string array by these 3 separators fi, se, and th(a range 
-    //separator such as '-'). eg. the src 'db$1-3,db$10-11' is splitted into ['db1', 
-    //'db2', 'db3', 'db10', 'db11'].
+    /** Split src into a string array by these 3 separators fi, se, and th(a range 
+     * separator such as '-'). eg. the src 'db$1-3,db$10-11' is splitted into ['db1', 
+     * 'db2', 'db3', 'db10', 'db11'].
+     */
     static range3(src, fi, se, th, le = '0', ri = '0', trim = true) {     
         const fiRes = this.split(src, fi, trim);
         if (!fiRes) return fiRes;
@@ -16,9 +17,11 @@ class StringSplitter {
         return res;
     }
 
-    // Split src into a string array by these 2 separators fi, se(a range 
-    //separator such as '-'). eg. the src 'db$1-3' is splitted into ['db1', 
-    //'db2', 'db3'].
+    /**
+     * Split src into a string array by these 2 separators fi, se(a range 
+     * separator such as '-'). eg. the src 'db$1-3' is splitted into ['db1', 
+     * 'db2', 'db3'].
+     */
     static range2(src, fi, se, le = '0', ri = '0', trim = true) {
         let fiRes = this.split(src, fi, trim);
         if (!fiRes || fiRes.length <= 1) {

@@ -11,7 +11,7 @@ class MycatServer {
         this.#config = new MycatConfig();
     }
 
-    static getInstance() {
+    static get instance() {
         let server = this.#INSTANCE;
         if (server) return server;
         else return this.#INSTANCE = new MycatServer();

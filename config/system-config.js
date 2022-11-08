@@ -37,7 +37,11 @@ class SystemConfig {
         return 128;
     }
 
-    static getHomePath() {
+    static get confPath() {
+        return path.resolve(this.homePath, 'conf');
+    }
+
+    static get homePath() {
         // Home path lookup: argv, env, cwd, BIN
         const prop = this.SYS_HOME;
         const props = this.#ARGV.props;
@@ -71,7 +75,7 @@ class SystemConfig {
         let level = this.getProperty('log-file-level', 'INFO');
         level = parseLevel(level);
         
-        const home = this.getHomePath();
+        const home = this.homePath;
         const dir = path.resolve(home, 'logs');
         const file = path.resolve(dir, 'mycat-%s.log');
         if (!fs.existsSync(dir)) fs.mkdir(dir);

@@ -1,5 +1,5 @@
-const PhysicalDBPool = require("../../../backend/datasource/physical-db-pool");
-const SystemConfig = require("../../system-config");
+const PhysicalDBPool = require("../../backend/data-source/physical-db-pool");
+const SystemConfig = require("../system-config");
 
 class DataHostConfig {
 

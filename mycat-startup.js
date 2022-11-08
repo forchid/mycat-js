@@ -8,13 +8,13 @@ class MycatStartup {
 
     static main(argv) {
         try {
-            const home = SystemConfig.getHomePath();
+            const home = SystemConfig.homePath;
             if (!home) {
                 console.error("%s is not set.", SystemConfig.SYS_HOME);
                 process.exit(-1);
             }
         
-            const server = MycatServer.getInstance();
+            const server = MycatServer.instance;
             server.startup();
             if (SystemConfig.logFileDisabled) {
                 console.log('MyCAT Server startup successfully. Logging file disabled.');
