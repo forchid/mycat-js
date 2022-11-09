@@ -30,6 +30,11 @@ function run() {
             assert.equal(1, a.length);
             assert.equal(' ', a[0]);
 
+            s = 'a';
+            a = StringSplitter.split(s, fi);
+            assert.equal(1, a.length);
+            assert.equal('a', a[0]);
+
             s = ',';
             a = StringSplitter.split(s, fi);
             assert.equal(2, a.length);

@@ -1,14 +1,16 @@
 const SystemConfig = require('../../system-config');
+const XmlHelper = require('./xml-helper');
+const ConfigError = require('../../config-error');
+const ObjectHelper = require('../../../util/object-helper');
+const RuleAlgorithm = require('../../model/rule/rule-algorithm');
+const BeanConfig = require('../../util/bean-config');
+const TableRuleConfig = require('../../model/table-rule-config');
+const StringSplitter = require('../../../util/string-splitter');
 
 const path = require('path');
 const fs = require('fs');
 const xml = require('xml');
-const XmlHelper = require('./xml-helper');
-const ConfigError = require('../../config-error');
-const StringHelper = require('../../../util/string-helper');
-const ObjectHelper = require('../../../util/object-helper');
-const RuleAlgorithm = require('../../model/rule/rule-algorithm');
-const BeanConfig = require('../../util/bean-config');
+const RuleConfig = require('../../model/rule/rule-config');
 
 /**
  * A loader that parses rule xml.
@@ -22,7 +24,7 @@ class XMLRuleLoader {
 	static #DEFAULT_XML = 'rule.xml';
 
     #tableRules = new Map(); // rule-name -> rule
-    #functions = new Map();  // fun-name  -> function
+    #functions = new Map();  // func-name -> func
 
     constructor(ruleFile) {
         if (!ruleFile) {
@@ -53,6 +55,59 @@ class Parser {
         }
 
         this.parseFunctions(root, functions);
+        this.parseTableRules(root, functions);
+    }
+
+    parseTableRules(root, functions) {
+        // XML basic structure:
+        // root
+        //  |- tableRule(name)*
+        //  |    | - rule
+        //  |         | -columns
+        //  |         | -algorithm
+        const trElements = root.getElementsByTagName('tableRule');
+        const n = trElements.length;
+        const tableRules = this.#loader.tableRules;
+
+        for (let i = 0; i < n; ++i) {
+            const trElem = trElements[i];
+            const name = XmlHelper.parseStrAttr('name', trElem, i + 1);
+
+            if (tableRules.has(name)) {
+                throw new ConfigError(`table rule '${name}' duplicated!`);
+            }
+            
+            const ruElements = trElem.getElementsByTagName('rule');
+            if (ruElements.length == 0) {
+                throw new ConfigError(`No rule element in tableRule '${name}'`);
+            } else if (ruElements.length > 1) {
+                throw new ConfigError(`Only one rule can defined in tableRule '${name}'`);
+            }
+
+            const rule = this.parseRule(ruElements[0]);
+            const funcName = rule.functionName;
+            const func = functions.get(funcName);
+            if (!func) {
+                let er = `Can't find function '${funcName}' that referenced in tableRule '${name}'`;
+                throw new ConfigError(er);
+            }
+            rule.algorithm = func;
+            tableRules.set(name, new TableRuleConfig(name, rule));
+        }
+    }
+
+    parseRule(ruElem) {
+        const colElem = XmlHelper.getChildElement(ruElem, 'columns');
+        const column = colElem.textContent.trim();
+        const columns = StringSplitter.split(column, ',');
+
+        if (columns.length > 1) {
+            throw new ConfigError(`table rule columns has multi values '${column}'`);
+        }
+        const algoElem = XmlHelper.getChildElement(ruElem, 'algorithm');
+        const algoName = algoElem.textContent.trim();
+
+        return new RuleConfig(column.toUpperCase(), algoName);
     }
 
     parseFunctions(root, functions) {

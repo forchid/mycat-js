@@ -152,8 +152,8 @@ class Parser {
 
             const defNotSwitch = DataHostConfig.CAN_SWITCH_DS;
             const notSwitch = XmlHelper.parseStrAttr('notSwitch', host, name, defNotSwitch);
-            const heartbeatSQL = XmlHelper.parseChildElement('heartbeat', host, name);
-            const initConSQL = XmlHelper.parseChildElement('connectionInitSql', host, name, null);
+            const heartbeatSQL = XmlHelper.parseChildText('heartbeat', host, name);
+            const initConSQL = XmlHelper.parseChildText('connectionInitSql', host, name, null);
         
             // parse writeHost, readHost
             let { writeDbConfs, readHostsMap } = this.parseDbHosts(name, host, dbType, 

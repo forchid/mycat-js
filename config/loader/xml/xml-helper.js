@@ -66,7 +66,7 @@ class XmlHelper {
         return i;
     }
 
-    static parseChildElement(tag, parent, paName, def) {
+    static parseChildText(tag, parent, paName, def) {
         const paTag = parent.tagName;
         let children = parent.getElementsByTagName(tag);
 
@@ -74,7 +74,10 @@ class XmlHelper {
             if (def !== undefined) {
                 return def;
             } else {
-                throw new ConfigError(`No child ${tag} in ${paTag} '${paName}'`);
+                if (paName === undefined)
+                    throw new ConfigError(`No child ${tag} in ${paTag}`);
+                else 
+                    throw new ConfigError(`No child ${tag} in ${paTag} '${paName}'`);
             } 
         } else {
             return children[0].textContent.trim();

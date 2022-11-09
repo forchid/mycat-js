@@ -3,7 +3,9 @@ const TypeHelper = require("../../util/type-helper");
 const RuleConfig = require("./rule/rule-config");
 
 /**
- * Table sharding rule config.
+ * Table sharding rule config that includes a name, and a sharding rule(a sharding 
+ * algorithm based on a table column).
+ * 
  * @author little-pan
  * @since 2022-11-18
  */
