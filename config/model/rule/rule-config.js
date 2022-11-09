@@ -3,8 +3,8 @@ const TypeHelper = require('../../../util/type-helper');
 const RuleAlgorithm = require('./rule-algorithm');
 
 /**
- * The sharding rule. It's column as the sharding field 
- * of a physical database.
+ * The sharding rule, includes a sharding column, and a rule algorithm based on the column. 
+ * It's column is used as the sharding field of a physical database.
  * 
  * @author little-pan
  * @since 2022-11-08

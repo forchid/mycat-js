@@ -37,6 +37,10 @@ class SystemConfig {
         return 128;
     }
 
+    static get ENCODING() {
+        return 'utf-8';
+    }
+
     static get confPath() {
         return path.resolve(this.homePath, 'conf');
     }
