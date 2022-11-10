@@ -109,8 +109,10 @@
 
 
 	<function name="crc32slot"
-			  class="io.mycat.route.function.PartitionByCRC32PreSlot"> 
-		<property name="count">2</property><!-- 要分片的数据库节点数量，必须指定，否则没法分片 -->
+			  class="io.mycat.route.function.PartitionByCRC32PreSlot">
+		<!-- 要分片的数据库节点数量，必须指定，否则没法分片? 
+		<property name="count">2</property>
+		-->
 	</function>
 
 <!--

@@ -1,3 +1,5 @@
+const StringHelper = require('../../util/string-helper');
+
 // A named data sharding, that is coordinated 
 //by a dataHost and a database.
 // 
@@ -11,15 +13,9 @@ class DataNodeConfig {
     #dataHost;
 
     constructor(name, database, dataHost) {
-        if (!name instanceof String) {
-            throw new TypeError(`name must be a string`);
-        }
-        if (!database instanceof String) {
-            throw new TypeError(`database must be a string`);
-        }
-        if (!dataHost instanceof String) {
-            throw new TypeError(`dataHost must be a string`);
-        }
+        StringHelper.ensureNotBlank(name, 'name');
+        StringHelper.ensureNotBlank(database, 'database');
+        StringHelper.ensureNotBlank(dataHost, 'dataHost');
         this.#name = name;
         this.#database = database;
         this.#dataHost = dataHost;

@@ -19,64 +19,64 @@ function run() {
 
             try {
                 StringHelper.ensureNotBlank('');
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof ArgumentError) {
-                    assert.fail();
+                if (!(e instanceof ArgumentError)) {
+                    throw new Error();
                 }
             }
 
             try {
                 StringHelper.ensureNotBlank(' ');
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof ArgumentError) {
-                    assert.fail();
+                if (!(e instanceof ArgumentError)) {
+                    throw new Error();
                 }
             }
 
             try {
                 StringHelper.ensureNotBlank('   ');
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof ArgumentError) {
-                    assert.fail();
+                if (!(e instanceof ArgumentError)) {
+                    throw new Error();
                 }
             }
 
             try {
                 StringHelper.ensureNotBlank('\t');
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof ArgumentError) {
-                    assert.fail();
+                if (!(e instanceof ArgumentError)) {
+                    throw new Error();
                 }
             }
 
             try {
                 StringHelper.ensureNotBlank(null);
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof TypeError) {
-                    assert.fail();
+                if (!(e instanceof TypeError)) {
+                    throw new Error();
                 }
             }
 
             try {
                 StringHelper.ensureNotBlank(0);
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof TypeError) {
-                    assert.fail();
+                if (!(e instanceof TypeError)) {
+                    throw new Error();
                 }
             }
 
             try {
                 StringHelper.ensureNotBlank({});
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof TypeError) {
-                    assert.fail();
+                if (!(e instanceof TypeError)) {
+                    throw new Error();
                 }
             }
         }); // ensureNotBlank()

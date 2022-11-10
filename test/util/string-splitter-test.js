@@ -103,10 +103,10 @@ function run() {
             s = 1;
             try {
                 a = StringSplitter.split(s, fi);
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof TypeError) {
-                    assert.fail();
+                if (!(e instanceof TypeError)) {
+                    throw new Error();
                 }
             }
         });
@@ -219,10 +219,10 @@ function run() {
             s = 1;
             try {
                 a = StringSplitter.range2(s, se, th);
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof TypeError) {
-                    assert.fail();
+                if (!(e instanceof TypeError)) {
+                    throw new Error();
                 }
             }
         });
@@ -446,10 +446,10 @@ function run() {
             s = 1;
             try {
                 a = StringSplitter.range3(s, fi, se, th);
-                assert.fail();
+                throw new Error();
             } catch (e) {
-                if (!e instanceof TypeError) {
-                    assert.fail();
+                if (!(e instanceof TypeError)) {
+                    throw new Error();
                 }
             }
         });

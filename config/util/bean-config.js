@@ -1,7 +1,6 @@
 const ObjectHelper = require("../../util/object-helper");
 const StringHelper = require("../../util/string-helper");
 const TypeHelper = require("../../util/type-helper");
-const ConfigError = require("../config-error");
 
 /**
  * An object config that includes some properties, or 
@@ -37,29 +36,17 @@ class BeanConfig {
 
         // Fill properties into this bean
         BeanConfig.fill(this, this.params, initEarly);
-        if (bean.init instanceof Function && initEarly) {
-            bean.init();
-        }
-
+        if (bean.init && initEarly) bean.init();
         return bean;
     }
 
     static fill(bean, params, initEarly = true, errIfAbsent = true) {
-        for (let [key, value] of params) {
-            if (key in bean) {
-                if (value instanceof BeanConfig) {
-                    value = value.create(initEarly);
-                }
-                bean[key] = value;
-            } else if (errIfAbsent) {
-                let constr = bean.constructor;
-                let name;
-                if (constr && (name = constr.name))
-                    throw new ConfigError(`No property '${key}' in class ${name}`);
-                else
-                    throw new ConfigError(`No property '${key}' defined`);
+        ObjectHelper.fill(bean, params, errIfAbsent, (value) => {
+            if (value instanceof BeanConfig) {
+                value = value.create(initEarly);
             }
-        }
+            return value;
+        });
     }
 
 }

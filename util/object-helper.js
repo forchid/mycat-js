@@ -1,5 +1,4 @@
 const path = require('path');
-const ConfigError = require('../config/config-error');
 const StringHelper = require('./string-helper');
 
 class ObjectHelper {
@@ -39,18 +38,24 @@ class ObjectHelper {
     static create(classPath, initEarly = true) {
         const Class = this.loadClass(classPath);
         const object = new Class();
-
-        if (object.init instanceof Function && initEarly) {
-            object.init();
-        }
-
+        
+        if (object.init && initEarly) object.init();
         return object;
     }
 
-    static fill(object, params) {
+    static fill(object, params, errIfAbsent = true, valueFn = null) {
         for (let [key, value] of params) {
-            if (object[key] !== undefined) {
+            if (key in object) {
+                if (valueFn) value = valueFn(value);
                 object[key] = value;
+            } else if (errIfAbsent) {
+                let constr = object.constructor;
+                let name;
+                if (constr && (name = constr.name)) {
+                    throw new TypeError(`No property '${key}' in class ${name}`);
+                } else {
+                    throw new TypeError(`No property '${key}' in object`);
+                }
             }
         }
     }

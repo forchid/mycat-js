@@ -4,7 +4,7 @@ const TypeHelper = require('./type-helper');
 class StringHelper {
 
     static ensureNotBlank(str, name) {
-        TypeHelper.ensureOf(str, String, 'String');
+        TypeHelper.ensureOf(str, String);
         if (str.trim() == '') {
             if (name === undefined)
                 throw new ArgumentError(`string is blank`);

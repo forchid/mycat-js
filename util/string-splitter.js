@@ -1,3 +1,5 @@
+const TypeHelper = require("./type-helper");
+
 class StringSplitter {
 
     /** Split src into a string array by these 3 separators fi, se, and th(a range 
@@ -67,9 +69,7 @@ class StringSplitter {
         if (src == null) {
             return null;
         }
-        if (!src instanceof String) {
-            throw new TypeError(`${ src } not a string`);
-        }
+        TypeHelper.ensureOf(src, String);
 
         if (src && trim) {
             src = src.trim();
