@@ -42,7 +42,11 @@ class SystemConfig {
     }
 
     static get confPath() {
-        return path.resolve(this.homePath, 'conf');
+        return path.join(this.homePath, 'conf');
+    }
+
+    static get logsPath() {
+        return path.join(this.homePath, 'logs');
     }
 
     static get homePath() {
@@ -57,16 +61,24 @@ class SystemConfig {
         if (home) return props[prop] = home;
 
         home = process.cwd();
-        let conf = path.resolve(home, "conf");
-        if (fs.exists(conf) && fs.stat(conf).isDirectory()) 
-            return props[prop] = home;
+        let conf = path.join(home, "conf");
+        try {
+            if (fs.stat(conf).isDirectory()) 
+                return props[prop] = home;
+        } catch (e) {
+            if (e.code != 'ENOENT') throw e;
+        }
 
-        home = path.resolve(__dirname, '..');
-        conf = path.resolve(home, "conf");
-        if (fs.exists(conf) && fs.stat(conf).isDirectory()) 
-            return props[prop] = home;
-        else 
-            return null;
+        home = path.join(__dirname, '..');
+        conf = path.join(home, "conf");
+        try {
+            if (fs.stat(conf).isDirectory()) 
+                return props[prop] = home;
+        } catch (e) {
+            if (e.code != 'ENOENT') throw e;
+        }
+         
+        return null;
     }
 
     static resetLogger() {
@@ -80,8 +92,8 @@ class SystemConfig {
         level = parseLevel(level);
         
         const home = this.homePath;
-        const dir = path.resolve(home, 'logs');
-        const file = path.resolve(dir, 'mycat-%s.log');
+        const dir = path.join(home, 'logs');
+        const file = path.join(dir, 'mycat-%s.log');
         if (!fs.existsSync(dir)) fs.mkdir(dir);
 
         const split = this.getProperty('log-file-split', '10m');
