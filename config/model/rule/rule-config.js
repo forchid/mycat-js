@@ -29,7 +29,7 @@ class RuleConfig {
     get algorithm() { return this.#algorithm; }
 
     set algorithm(algorithm) {
-        TypeHelper.ensureOf(algorithm, RuleAlgorithm, 'RuleAlgorithm');
+        TypeHelper.ensureInstanceof(algorithm, RuleAlgorithm, 'algorithm');
         this.#algorithm = algorithm;
     }
 }

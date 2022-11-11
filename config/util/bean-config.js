@@ -18,7 +18,7 @@ class BeanConfig {
     constructor(name, className, params = new Map()) {
         StringHelper.ensureNotBlank(name, 'name');
         StringHelper.ensureNotBlank(name, 'className');
-        TypeHelper.ensureOf(params, Map, "Map");
+        TypeHelper.ensureInstanceof(params, Map, 'params');
         this.#name = name;
         this.#className = className;
         this.#params = params;

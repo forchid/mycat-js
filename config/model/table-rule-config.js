@@ -16,7 +16,7 @@ class TableRuleConfig {
 
     constructor(name, rule) {
         this.name = name;
-        TypeHelper.ensureOf(rule, RuleConfig, 'RuleConfig');
+        TypeHelper.ensureInstanceof(rule, RuleConfig, 'rule');
         this.#rule = rule;
     }
 

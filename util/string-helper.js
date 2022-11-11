@@ -4,7 +4,7 @@ const TypeHelper = require('./type-helper');
 class StringHelper {
 
     static ensureNotBlank(str, name) {
-        TypeHelper.ensureOf(str, String);
+        TypeHelper.ensureString(str, name);
         if (str.trim() == '') {
             if (name === undefined)
                 throw new ArgumentError(`string is blank`);
@@ -14,7 +14,7 @@ class StringHelper {
     }
 
     static mapJavaClassName(className) {
-        TypeHelper.ensureOf(className, String, 'String');
+        TypeHelper.ensureString(className, 'className');
         let jsPath = className.replace(/\./g, '/');
         const i = jsPath.lastIndexOf('/');
         let name = i == -1? className: jsPath.slice(i + 1);

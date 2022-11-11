@@ -69,7 +69,7 @@ class StringSplitter {
         if (src == null) {
             return null;
         }
-        TypeHelper.ensureOf(src, String);
+        TypeHelper.ensureString(src, 'src');
 
         if (src && trim) {
             src = src.trim();
