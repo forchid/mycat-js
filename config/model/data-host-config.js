@@ -1,4 +1,5 @@
 const PhysicalDBPool = require("../../backend/data-source/physical-db-pool");
+const StringHelper = require('../../util/string-helper');
 const SystemConfig = require("../system-config");
 
 class DataHostConfig {
@@ -9,12 +10,12 @@ class DataHostConfig {
     #name;
     #dbType;
     #dbDriver;
-    #switchType;
-    #slaveThreshold;
+    #switchType = DataHostConfig.DEFAULT_SWITCH_DS;
+    #slaveThreshold = -1; // default never read from slave
     #tempReadHostAvailable;
     #isShowSlaveSql = false;
     #isShowClusterSql = false;
-    #heartbeatSQL = null;
+    #heartbeatSQL = '';
     #writeHosts;
     #readHosts;
     #dataNodes = new Set();
@@ -24,10 +25,10 @@ class DataHostConfig {
     balance = PhysicalDBPool.BALANCE_NONE;
     balanceType = PhysicalDBPool.RANDOM;
     writeType = PhysicalDBPool.WRITE_ONLYONE_NODE;
-    connectionInitSql = null;
+    connectionInitSql = '';
     filters = 'mergeStat';
     logTime = PhysicalDBPool.LOG_TIME;
-    slaveIDs = null;
+    slaveIDs = '';
     notSwitch = DataHostConfig.CAN_SWITCH_DS;
     maxRetryCount = 3;
 
@@ -63,10 +64,19 @@ class DataHostConfig {
         return this.#readHosts;
     }
 
+    /**
+     * The write data source switch type, can be the one of not auto switch,
+     * auto switch(default), switch by master/slave sync status, or switch by 
+     * cluster status.
+     */
     get switchType() {
         return this.#switchType;
     }
 
+    /**
+     * A decision condition of reading from the salve. MyCat can read from this slave 
+     * if the time that the slave behinds master < this threshold.
+     */
     get slaveThreshold() {
         return this.#slaveThreshold;
     }
@@ -97,8 +107,25 @@ class DataHostConfig {
     }
 
     addDataNode(nodeName) {
+        StringHelper.ensureNotBlank(nodeName, 'nodeName');
         this.#dataNodes.add(nodeName);
     }
+
+    /** A switchType value: not auto switch write source. */
+    static get NOT_SWITCH_DS() { return -1; }
+
+    /** The default switchType value: auto switch write source. */
+    static get DEFAULT_SWITCH_DS() { return 1; }
+
+    /** A switchType value: switch write source by master/slave sync status.
+     * eg. MySQL master/slave backend.
+     */
+    static get SYN_STATUS_SWITCH_DS() { return 2; }
+
+    /** A switchType value: switch write source by cluster status.
+     * This switch type applies to multi-master clusters such as MySQL Galera.
+     */
+    static get CLUSTER_STATUS_SWITCH_DS() { return 3; }
 
     static get CAN_SWITCH_DS() {
         return '0';

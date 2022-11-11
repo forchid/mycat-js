@@ -35,6 +35,9 @@ class XMLSchemaLoader {
         parser.parse(XMLSchemaLoader.#DEFAULT_DTD, schemaFile);
     }
 
+    /**
+     * dataHost name -> DataHostConfig
+     */
     get dataHosts() { return this.#dataHosts; }
 
     get dataNodes() { return this.#dataNodes; }
@@ -136,7 +139,8 @@ class Parser {
             const minCon = XmlHelper.parseIntAttr('minCon', host, name);
             const balance = XmlHelper.parseIntAttr('balance', host, name);
             const balanceType = XmlHelper.parseIntAttr('balanceType', host, name, 0);
-            const switchType = XmlHelper.parseIntAttr('switchType', host, name, -1);
+            const switchDef = DataHostConfig.DEFAULT_SWITCH_DS;
+            const switchType = XmlHelper.parseIntAttr('switchType', host, name, switchDef);
             const slaveThreshold = XmlHelper.parseIntAttr('slaveThreshold', host, name, -1);
             const tempReadHostAvailable = XmlHelper.parseIntAttr('tempReadHostAvailable', 
                 host, name, 0) > 0;
@@ -144,16 +148,16 @@ class Parser {
 
             const dbDriver = XmlHelper.parseStrAttr('dbDriver', host, name, '');
             const dbType = XmlHelper.parseStrAttr('dbType', host, name);
-            const filters = XmlHelper.parseStrAttr('filters', host, name, '');
+            const filters = XmlHelper.parseStrAttr('filters', host, name, 'mergeStat');
             const defLogTime = PhysicalDBPool.LOG_TIME;
             const logTime = XmlHelper.parseIntAttr('logTime', host, name, defLogTime);
-            const slaveIDs = XmlHelper.parseStrAttr('slaveIDs', host, name, null);
+            const slaveIDs = XmlHelper.parseStrAttr('slaveIDs', host, name, '');
             const maxRetryCount = XmlHelper.parseIntAttr('maxRetryCount', host, name, 3);
 
             const defNotSwitch = DataHostConfig.CAN_SWITCH_DS;
             const notSwitch = XmlHelper.parseStrAttr('notSwitch', host, name, defNotSwitch);
             const heartbeatSQL = XmlHelper.parseChildText('heartbeat', host, name);
-            const initConSQL = XmlHelper.parseChildText('connectionInitSql', host, name, null);
+            const initConSQL = XmlHelper.parseChildText('connectionInitSql', host, name, '');
         
             // parse writeHost, readHost
             let { writeDbConfs, readHostsMap } = this.parseDbHosts(name, host, dbType, 
