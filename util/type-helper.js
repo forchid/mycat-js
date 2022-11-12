@@ -48,6 +48,15 @@ class TypeHelper {
         }
     }
 
+    static parseIntDecimal(d, name = '', trim = true) {
+        return this.parseDecimal(d, true, name, trim);
+    }
+
+    /**
+     * Parse decimal(integer or float number), avoid the parseInt() 
+     * strange behaviors such as parseInt(0.0000007) returning 7(should be 0), 
+     * parseInt('10a') returning 10(should be NaN, or error) etc.
+     */
     static parseDecimal(d, onlyInt = false, name = '', trim = true) {
         const types = typeof d;
         const p = name? name+' ': '';
@@ -55,8 +64,8 @@ class TypeHelper {
         if (types === 'string' || d instanceof String) {
             // String number is required WYSIWYG!
             // Decimal number format: 
-            //1) integer [+-]?((0|[1-9][0-9]*)(.0*)?    |(0|[1-9][0-9]*)?.0+)
-            //2) float   [+-]?((0|[1-9][0-9]*)(.[0-9]*)?|(0|[1-9][0-9]*)?.[0-9]+)
+            //1) integer [+-]?([0-9]+)
+            //2) float   [+-]?([0-9]+(.[0-9]*)?|[0-9]*.[0-9]+)
             let s = d;
             if (trim) s = s.trim();
             const m = s.length;
@@ -79,25 +88,15 @@ class TypeHelper {
                         // next step
                     case 2:
                         // parseIntPart
-                        if (c === '0') {
+                        while (c >= '0' && c <= '9' && i < m) {
                             intPart = true;
-                            if (i + 1 < m) step = 3;
-                            else step = 5;
-                            continue;
+                            c = s.charAt(++i);
                         }
-                        if (c >= '1' && c <= '9') {
-                            intPart = true;
-                            while (i < m) {
-                                c = s.charAt(++i);
-                                if (c >= '0' && c <= '9') {
-                                    continue;
-                                }
-                                break;
-                            }
-                            if (i >= m) {
-                                step = 5;
-                                continue;
-                            }
+                        if (i >= m) {
+                            step = 5;
+                            continue;
+                        } else if (onlyInt) {
+                            throw new ArgumentError(`${p}'${d}' can't casted as integer`);
                         }
                         step = 3;
                     case 3:

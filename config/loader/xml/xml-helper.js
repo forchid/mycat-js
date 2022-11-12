@@ -45,7 +45,7 @@ class XmlHelper {
 
         let i;
         if ((!attr || (i = attr.value.trim()) == '') && !isNaN(def)) {
-            return def;
+            return TypeHelper.parseIntDecimal(def, 'def');
         }
 
         if (!attr) {
@@ -56,7 +56,7 @@ class XmlHelper {
             }
         }
         
-        return TypeHelper.parseDecimal(i, true, name);
+        return TypeHelper.parseIntDecimal(i, name);
     }
 
     static parseChildText(tag, parent, paName, def) {

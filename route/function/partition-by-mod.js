@@ -10,7 +10,7 @@ class PartitionByMod extends RuleAlgorithm {
     }
 
     set count(count) {
-        this.#count = TypeHelper.parseDecimal(count, true, 'count');
+        this.#count = TypeHelper.parseIntDecimal(count, 'count');
     }
 
     // TODO
