@@ -26,7 +26,7 @@ class TypeHelper {
             }
         }
 
-        name = name? name + '': '';
+        name = name? name + ' ': '';
         if (types === 'string' || i instanceof String) {
             throw new TypeError(`${name}'${i}' not a integer`);
         } else {

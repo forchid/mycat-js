@@ -1,5 +1,7 @@
 const PhysicalDBPool = require("../../backend/data-source/physical-db-pool");
 const StringHelper = require('../../util/string-helper');
+const TypeHelper = require("../../util/type-helper");
+const ConfigError = require("../config-error");
 const SystemConfig = require("../system-config");
 
 class DataHostConfig {
@@ -7,17 +9,17 @@ class DataHostConfig {
     static #HB_SLV_SQL_PATTERN = /\s*show\s+slave\s+status\s*/i;
     static #HB_CLS_SQL_PATTERN = /\s*show\s+status\s+like\s+'wsrep%'/i;
 
-    #name;
-    #dbType;
-    #dbDriver;
+    #name = '';
+    #dbType = '';
+    #dbDriver = '';
     #switchType = DataHostConfig.DEFAULT_SWITCH_DS;
     #slaveThreshold = -1; // default never read from slave
-    #tempReadHostAvailable;
+    #tempReadHostAvailable = false;
     #isShowSlaveSql = false;
     #isShowClusterSql = false;
     #heartbeatSQL = '';
-    #writeHosts;
-    #readHosts;
+    #writeHosts = [];
+    #readHosts = new Map();
     #dataNodes = new Set();
 
     maxCon = SystemConfig.DEFAULT_POOL_SIZE;
@@ -34,6 +36,22 @@ class DataHostConfig {
 
     constructor(name, dbType, dbDriver, writeHosts, readHosts, 
         switchType, slaveThreshold, tempReadHostAvailable) {
+        // Check
+        StringHelper.ensureNotBlank(name, 'dataHost name');
+        StringHelper.ensureNotBlank(dbType, 'dataHost dbType');
+        StringHelper.ensureNotBlank(dbDriver, 'dataHost dbDriver');
+        TypeHelper.ensureInstanceof(writeHosts, Array, 'writeHosts');
+        TypeHelper.ensureInstanceof(readHosts, Map, 'readHosts');
+        TypeHelper.ensureInteger(switchType, 'dataHost switchType');
+        if (switchType < DataHostConfig.NOT_SWITCH_DS 
+            || switchType > DataHostConfig.CLUSTER_STATUS_SWITCH_DS) {
+            let er = `switchType ${switchType} in dataHost '${name}' unknown!`;
+            throw new ConfigError(er);
+        }
+        TypeHelper.ensureInteger(slaveThreshold, 'dataHost slaveThreshold');
+        TypeHelper.ensureBoolean(tempReadHostAvailable, 'tempReadHostAvailable');
+        
+        // Init
         this.#name = name;
         this.#dbType = dbType;
         this.#dbDriver = dbDriver;

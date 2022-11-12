@@ -4,6 +4,7 @@ const XmlSchemaLoader = require('../../../../config/loader/xml/xml-schema-loader
 
 const path = require('path');
 const test = require('test');
+const DBHostConfig = require('../../../../config/model/db-host-config');
 
 runIf(__filename, run);
 
@@ -14,12 +15,14 @@ function run() {
         let schemaFile = path.join(__dirname, 'schema.xml');
         const loader = new XmlSchemaLoader(schemaFile);
 
-        it('load dataHost', () => {
+        it('test dataHost', () => {
             const dataHosts = loader.dataHosts;
             assert.ok(dataHosts instanceof Map);
             for (let [key, value] of dataHosts) {
                 assert.ok(value instanceof DataHostConfig);
                 const host = value;
+                let writeHosts;
+                let n;
                 switch (key) {
                     case 'localhost1':
                         assert.equal(key, host.name);
@@ -41,6 +44,51 @@ function run() {
                         assert.equal(false, host.tempReadHostAvailable);
                         assert.equal(false, host.isShowSlaveSql);
                         assert.equal(false, host.isShowClusterSql);
+                        // writeHost
+                        writeHosts = host.writeHosts;
+                        assert.ok(writeHosts instanceof Array);
+                        n = writeHosts.length;
+                        assert.equal(2, n);
+                        for (let i = 0; i < n; ++i) {
+                            let wHost = writeHosts[i];
+                            assert.ok(wHost instanceof DBHostConfig);
+                            switch(i) {
+                                case 0:
+                                    assert.equal('hostM1', wHost.hostName);
+                                    assert.equal('jdbc:mysql://localhost:3306', wHost.url);
+                                    assert.equal('localhost', wHost.ip);
+                                    assert.equal(3306, wHost.port);
+                                    assert.equal('root', wHost.user);
+                                    assert.equal('root', wHost.password);
+                                    assert.equal('root', wHost.encryptPassword);
+                                    assert.equal('mysql', wHost.dbType);
+                                    assert.equal(1000, wHost.maxCon);
+                                    assert.equal(10, wHost.minCon);
+                                    assert.equal(true, wHost.checkAlive);
+                                    assert.equal('mergeStat', wHost.filters);
+                                    assert.equal(300000, wHost.logTime);
+                                    assert.equal(0, wHost.weight);
+                                    break;
+                                case 1:
+                                    assert.equal('hostM2', wHost.hostName);
+                                    assert.equal('jdbc:mysql://localhost:3326', wHost.url);
+                                    assert.equal('localhost', wHost.ip);
+                                    assert.equal(3326, wHost.port);
+                                    assert.equal('root', wHost.user);
+                                    assert.equal('123456', wHost.password);
+                                    assert.equal('123456', wHost.encryptPassword);
+                                    assert.equal('mysql', wHost.dbType);
+                                    assert.equal(1000, wHost.maxCon);
+                                    assert.equal(10, wHost.minCon);
+                                    assert.equal(true, wHost.checkAlive);
+                                    assert.equal('mergeStat', wHost.filters);
+                                    assert.equal(300000, wHost.logTime);
+                                    assert.equal(0, wHost.weight);
+                                    break;
+                                default:
+                                    throw new Error('db host more than 2!');
+                            }
+                        }
                         break;
                     case 'sequoiadb1':
                         assert.equal(key, host.name);
@@ -62,6 +110,35 @@ function run() {
                         assert.equal(false, host.tempReadHostAvailable);
                         assert.equal(false, host.isShowSlaveSql);
                         assert.equal(false, host.isShowClusterSql);
+                        // writeHost
+                        writeHosts = host.writeHosts;
+                        assert.ok(writeHosts instanceof Array);
+                        n = writeHosts.length;
+                        assert.equal(1, n);
+                        for (let i = 0; i < n; ++i) {
+                            let wHost = writeHosts[i];
+                            assert.ok(wHost instanceof DBHostConfig);
+                            switch(i) {
+                                case 0:
+                                    assert.equal('hostM1', wHost.hostName);
+                                    assert.equal('sequoiadb://1426587161.dbaas.sequoialab.net:11920/SAMPLE', wHost.url);
+                                    assert.equal('1426587161.dbaas.sequoialab.net', wHost.ip);
+                                    assert.equal(11920, wHost.port);
+                                    assert.equal('jifeng', wHost.user);
+                                    assert.equal('jifeng', wHost.password);
+                                    assert.equal('jifeng', wHost.encryptPassword);
+                                    assert.equal('sequoiadb', wHost.dbType);
+                                    assert.equal(1000, wHost.maxCon);
+                                    assert.equal(1, wHost.minCon);
+                                    assert.equal(true, wHost.checkAlive);
+                                    assert.equal('mergeStat', wHost.filters);
+                                    assert.equal(300000, wHost.logTime);
+                                    assert.equal(0, wHost.weight);
+                                    break;
+                                default:
+                                    throw new Error('db host more than 1!');
+                            }
+                        }
                         break;
                     default:
                         throw new Error(`Unknown dataHost '${key}'`);

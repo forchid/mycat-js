@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const xml = require('xml');
 const url = require('url');
+const TypeHelper = require('../../../util/type-helper');
 
 class XMLSchemaLoader {
 
@@ -249,15 +250,13 @@ class Parser {
                 throw new ConfigError(`url '${urls}' format error in ${tagName} '${host}'`);
             }
             ip = a.slice(0, i).trim();
-            port = parseInt(a.slice(i + 1).trim());
-            if (isNaN(port)) {
-                throw new ConfigError(`url '${urls}' port error in ${tagName} '${host}'`);
-            }
+            port = a.slice(i + 1).trim();
+            port = TypeHelper.parseIntDecimal(port, 'port');
         } else {
             let u = urls.slice(5);
             u = url.parse(u, false, true);
-            ip = u.host;
-            port = u.port;
+            ip = u.hostname;
+            port = TypeHelper.parseIntDecimal(u.port, 'port');
         }
 
         const config = new DBHostConfig(host, ip, port, urls, user, 
