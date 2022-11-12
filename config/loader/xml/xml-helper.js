@@ -1,6 +1,8 @@
-const xml = require('xml');
+const TypeHelper = require('../../../util/type-helper');
 const ConfigError = require('../../config-error');
 const BeanConfig = require('../../util/bean-config');
+
+const xml = require('xml');
 
 class XmlHelper {
 
@@ -54,16 +56,7 @@ class XmlHelper {
             }
         }
         
-        i = parseInt(i);
-        if (isNaN(i)) {
-            if (elName == undefined) {
-                throw new ConfigError(`${name} '${attr.value}' not int in the ${tag}`);
-            } else {
-                throw new ConfigError(`${name} '${attr.value}' not int in the ${tag} ${elName}`);
-            }
-        }
-
-        return i;
+        return TypeHelper.parseDecimal(i, true, name);
     }
 
     static parseChildText(tag, parent, paName, def) {

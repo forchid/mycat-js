@@ -48,53 +48,139 @@ class TypeHelper {
         }
     }
 
-    static parseDecimal(i, name, trim = true) {
-        const types = typeof i;
+    static parseDecimal(d, onlyInt = false, name = '', trim = true) {
+        const types = typeof d;
+        const p = name? name+' ': '';
 
-        if (types === 'string' || i instanceof String) {
+        if (types === 'string' || d instanceof String) {
             // String number is required WYSIWYG!
-            let s = i;
+            // Decimal number format: 
+            //1) integer [+-]?((0|[1-9][0-9]*)(.0*)?    |(0|[1-9][0-9]*)?.0+)
+            //2) float   [+-]?((0|[1-9][0-9]*)(.[0-9]*)?|(0|[1-9][0-9]*)?.[0-9]+)
+            let s = d;
             if (trim) s = s.trim();
-            let m = s.length;
-            let j = 0;
+            const m = s.length;
+            // Step: 1)parseSign, 2)parseIntPart, 3)parseDot, 4)parseFloatPart, 4)over
+            let step = 1;
+            let c;
+            let intPart = false;
 
-            if (m > 0) {
-                let c = s.charAt(0);
-                if (c === '0' && m > 1) {
-                    let p = name? name+' ': '';
-                    throw new ArgumentError(`${p}'${i}' can't casted as decimal`);
+            for (let i = 0; step < 5; ++i) {
+                if (i >= m) {
+                    throw new ArgumentError(`${p}'${d}' can't casted as decimal`);
                 }
-                if (c === '+' || c === '-') ++j;
-            }
-            for (;j < m;) {
-                let c = s.charAt(j++);
-                if (c < '0' || c > '9') {
-                    // eg. '1a', '01.1', '0x01a' ...
-                    let p = name? name+' ': '';
-                    throw new ArgumentError(`${p}'${i}' can't casted as decimal`);
+
+                c = s.charAt(i);
+                switch (step) {
+                    case 1:
+                        step = 2;
+                        // parseSign
+                        if (c === '+' || c === '-') continue;
+                        // next step
+                    case 2:
+                        // parseIntPart
+                        if (c === '0') {
+                            intPart = true;
+                            if (i + 1 < m) step = 3;
+                            else step = 5;
+                            continue;
+                        }
+                        if (c >= '1' && c <= '9') {
+                            intPart = true;
+                            while (i < m) {
+                                c = s.charAt(++i);
+                                if (c >= '0' && c <= '9') {
+                                    continue;
+                                }
+                                break;
+                            }
+                            if (i >= m) {
+                                step = 5;
+                                continue;
+                            }
+                        }
+                        step = 3;
+                    case 3:
+                        // parseDot
+                        if (c === '.') {
+                            if (i + 1 >= m) {
+                                if (intPart) {
+                                    step = 5;
+                                    continue;
+                                }
+                            } else {
+                                if (intPart || !onlyInt) {
+                                    step = 4;
+                                    continue;
+                                }
+                            }
+                        }
+                        let er = `${p}'${d}' can't casted as ${onlyInt?'integer':'decimal'}`;
+                        throw new ArgumentError(er);
+                    case 4:
+                        // parseFloatPart
+                        while (true) {
+                            if (onlyInt) {
+                                if (c !== '0') break;
+                            } else {
+                                if (c < '0' || c > '9') break;
+                            }
+                            if (i + 1 < m) {
+                                c = s.charAt(++i);
+                                continue;
+                            }
+                            step = 5;
+                            break;
+                        }
+                        if (step === 5) {
+                            continue;
+                        }
+                        // fail!
+                    default:
+                        throw new ArgumentError(`${p}'${d}' can't casted as decimal`);
                 }
             }
-            const n = parseInt(s);
-            if (isNaN(n) || (s.startsWith('+') && n !== 0 && s !== '+' + n) 
-                || (s.startsWith('-') && n !== 0 && s !== '' + n) 
-                || Math.abs(n) > Number.MAX_SAFE_INTEGER) {
-                let p = name? name+' ': '';
-                throw new ArgumentError(`${p}'${i}' can't casted as decimal`);
+
+            if (onlyInt) {
+                const n = parseInt(s);
+                if (!isNaN(n)) {
+                    if (Math.abs(n) <= Number.MAX_SAFE_INTEGER) {
+                        return n; // 1-1) OK
+                    }
+                    throw new ArgumentError(`${p}${d} exceeds max safe integer`);
+                }
+                throw new ArgumentError(`${p}'${d}' can't casted as integer`);
+            } else {
+                const n = parseFloat(s);
+                if (!isNaN(n)) {
+                    return n; // 1-2) OK
+                }
+                throw new ArgumentError(`${p}'${d}' can't casted as decimal`);
             }
-            return n; // 1) OK
         }
 
-        if (types === 'number' || i instanceof Number || types === 'bigint') {
-            // Literal number, eg. 1, 1e1, 1.0, 1n ...
-            const n = parseInt(i);
-            if (i == n && Math.abs(n) <= Number.MAX_SAFE_INTEGER) {
-                return n; // 2) OK
+        if (types === 'number' || d instanceof Number || types === 'bigint') {
+            if (onlyInt) {
+                // Literal number, eg. 1, 1e1, 1.0, 1n ...
+                const n = parseInt(d);
+                if (n == d) {
+                    if (Math.abs(n) <= Number.MAX_SAFE_INTEGER) {
+                        return n; // 2-1) OK
+                    }
+                    throw new ArgumentError(`${p}${d} exceeds max safe integer`);
+                }
+                // eg. 1.1, NaN
+            } else {
+                const n = parseFloat(d);
+                if (n == d) {
+                    // float
+                    return n; // 2-2) OK
+                }
+                // eg. NaN
             }
-            // eg. 1.1, NaN
         }
         // eg. undefined, null, true ...
-        let p = name? name+' ': '';
-        throw new ArgumentError(`${p}${i} can't casted as decimal`);
+        throw new ArgumentError(`${p}${d} can't casted as decimal`);
     }
 
 }

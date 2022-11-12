@@ -166,35 +166,39 @@ function run() {
         });
 
         it('parseDecimal()', () => {
-            let n = TypeHelper.parseDecimal(0);
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal(1);
-            assert.equal(1, n);
-            n = TypeHelper.parseDecimal(+1);
-            assert.equal(1, n);
-            n = TypeHelper.parseDecimal(-1);
-            assert.equal(-1, n);
-            n = TypeHelper.parseDecimal(1.0);
-            assert.equal(1, n);
-            n = TypeHelper.parseDecimal(1n);
-            assert.equal(1, n);
-            n = TypeHelper.parseDecimal(1e1);
-            assert.equal(10, n);
+            let oks = [0, 0., 0.0, 0.00, .0, .00, 1, +1, -1, 1.0, 1n, 1e1];
+            oks.forEach(item => {
+                let n = TypeHelper.parseDecimal(item);
+                assert.equal(item, n);
+                n = TypeHelper.parseDecimal(item, true);
+                assert.equal(item, n);
+            });
+            
+            oks = ['0', '0.', '0.0', '0.00', 
+                '+0', '+0.', '+0.0', '+0.00',
+                ' +0', ' +0 ', ' +0. ', ' +0.0 ', ' +0.00 ',
+                '-0', '-0.', '-0.0', '-0.00',
+                ' -0', ' -0.', ' -0.0', ' -0.00',
+                ' -0 ', ' -0. ', ' -0.0', ' -0.00'
+            ];
+            oks.forEach(item => {
+                let n = TypeHelper.parseDecimal(item);
+                assert.equal(0, n);
+                n = TypeHelper.parseDecimal(item, true);
+                assert.equal(0, n);
+            });
 
-            n = TypeHelper.parseDecimal('0');
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal('+0');
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal(' +0');
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal(' +0 ');
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal('-0');
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal(' -0');
-            assert.equal(0, n);
-            n = TypeHelper.parseDecimal(' -0 ');
-            assert.equal(0, n);
+            oks = ['0', '0.', '0.0', '0.00', '.0', '.00', 
+                '+0', '+0.', '+0.0', '+0.00', '+.0', '+.00', 
+                ' +0', ' +0 ', ' +0. ', ' +0.0 ', ' +0.00 ', ' +.0 ', ' +.00 ',
+                '-0', '-0.', '-0.0', '-0.00', '-.0', '-.00', 
+                ' -0', ' -0.', ' -0.0', ' -0.00', ' -.0', ' -.00', 
+                ' -0 ', ' -0. ', ' -0.0', ' -0.00', ' -.0', ' -.00', ' -.00 ',
+            ];
+            oks.forEach(item => {
+                let n = TypeHelper.parseDecimal(item);
+                assert.equal(0, n);
+            });
 
             n = TypeHelper.parseDecimal('1');
             assert.equal(1, n);
@@ -229,23 +233,23 @@ function run() {
             let fails = [' 0', ' 0', ' 0 ', ' 1 ', '\t1', '1\t', ' 1\t'];
             fails.forEach(item => {
                 try {
-                    TypeHelper.parseDecimal(item, null, false);
+                    TypeHelper.parseDecimal(item, true, 'item', false);
                     throw new Error(item);
                 } catch (e) {
                     assert.ok(e instanceof ArgumentError, e.stack);
                 }
             });
 
-            fails = ['00', '001', '0.0', '0.', '.0', '1.1', 9007199254740992,
-                '1.0', '1.00', '1.', '1n', '1N', '1e1', '9007199254740992',
+            fails = ['00', '001', '0.01', '0.1', '.01', '1.1', 9007199254740992,
+                '1.01', '1.001', '1.1', '1n', '1N', '1e1', '9007199254740992',
                 undefined, null, true, '', [], {}, ()=>{}, function(){}, 
-                new Date(), new Object(), new Number(1.1), new String('1.1'),
-                new String('0x1n'), new String('1.00'), new String('1.'),
+                new Date(), new Object(), new Number(1.1), new String('1.01'),
+                new String('0x1n'), new String('1.001'), new String('1.1'),
                 new String('01.'), new String('0x1.'), new String('0X1.')
             ];
             fails.forEach(item => {
                 try {
-                    let n = TypeHelper.parseDecimal(item);
+                    let n = TypeHelper.parseDecimal(item, true, 'item');
                     throw new Error(n + ' <-> ' + item);
                 } catch (e) {
                     assert.ok(e instanceof ArgumentError, e.stack);

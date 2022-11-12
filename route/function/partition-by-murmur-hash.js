@@ -15,7 +15,7 @@ class PartitionByMurmurHash extends RuleAlgorithm {
     }
 
     set seed(seed) {
-        this.#seed = TypeHelper.parseDecimal(seed, 'seed');
+        this.#seed = TypeHelper.parseDecimal(seed, true, 'seed');
     }
 
     get count() {
@@ -23,7 +23,7 @@ class PartitionByMurmurHash extends RuleAlgorithm {
     }
 
     set count(count) {
-        this.#count = TypeHelper.parseDecimal(count, 'count');
+        this.#count = TypeHelper.parseDecimal(count, true, 'count');
     }
 
     get virtualBucketTimes() {
@@ -31,7 +31,8 @@ class PartitionByMurmurHash extends RuleAlgorithm {
     }
 
     set virtualBucketTimes(vbTimes) {
-        this.#virtualBucketTimes = TypeHelper.parseDecimal(vbTimes, 'virtualBucketTimes');
+        this.#virtualBucketTimes = TypeHelper.parseDecimal(vbTimes, 
+            true, 'virtualBucketTimes');
     }
 
     // TODO
