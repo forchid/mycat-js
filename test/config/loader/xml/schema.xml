@@ -14,6 +14,7 @@
 	</schema>
 
 	<dataNode name="dn1$0-2" dataHost="localhost1" database="db$0-2"/>
+	<dataNode name="dn2$0-0" dataHost="sequoiadb1" database="db2$0-0"/>
 
 	<dataNode name="dn1" dataHost="localhost1" database="db1" />
 	<dataNode name="dn2" dataHost="localhost1" database="db2" />

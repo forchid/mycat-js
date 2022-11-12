@@ -94,7 +94,7 @@ class Parser {
                 hdNames.forEach((hd, i) => 
                     this.createDataNode(dnNames[i], hd.database, hd.dataHost));
             } else {
-                this.createDataNode(name, database, dataHost);
+                this.createDataNode(dnNames[0], databases[0], dataHosts[0]);
             }
         }
     }

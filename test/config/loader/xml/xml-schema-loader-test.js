@@ -1,10 +1,11 @@
 const DataHostConfig = require('../../../../config/model/data-host-config');
 const runIf = require('../../../run-if');
 const XmlSchemaLoader = require('../../../../config/loader/xml/xml-schema-loader');
+const DBHostConfig = require('../../../../config/model/db-host-config');
+const DataNodeConfig = require('../../../../config/model/data-node-config');
 
 const path = require('path');
 const test = require('test');
-const DBHostConfig = require('../../../../config/model/db-host-config');
 
 runIf(__filename, run);
 
@@ -229,6 +230,57 @@ function run() {
                         break;
                     default:
                         throw new Error(`Unknown dataHost '${key}'`);
+                }
+            }
+        });
+
+        it ('test dataNode', () => {
+            let dataNodes = loader.dataNodes;
+            assert.ok(dataNodes instanceof Map);
+            let n = dataNodes.size;
+            assert.equal(7, n);
+
+            for (let [key, value] of dataNodes) {
+                assert.ok(value instanceof DataNodeConfig);
+                let dataNode = value;
+                switch(key) {
+                    case 'dn10':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db0', dataNode.database);
+                        assert.equal('localhost1', dataNode.dataHost);
+                        break;
+                     case 'dn11':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db1', dataNode.database);
+                        assert.equal('localhost1', dataNode.dataHost);
+                        break;
+                    case 'dn12':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db2', dataNode.database);
+                        assert.equal('localhost1', dataNode.dataHost);
+                        break;
+                    case 'dn20':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db20', dataNode.database);
+                        assert.equal('sequoiadb1', dataNode.dataHost);
+                        break;
+                    case 'dn1':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db1', dataNode.database);
+                        assert.equal('localhost1', dataNode.dataHost);
+                        break;
+                    case 'dn2':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db2', dataNode.database);
+                        assert.equal('localhost1', dataNode.dataHost);
+                        break;
+                    case 'dn3':
+                        assert.equal(key, dataNode.name);
+                        assert.equal('db3', dataNode.database);
+                        assert.equal('localhost1', dataNode.dataHost);
+                        break;
+                    default:
+                        throw new Error(`Unknown dataNode '${key}'!`);     
                 }
             }
         });
