@@ -7,12 +7,13 @@ const DBHostConfig = require('../../model/db-host-config');
 const DataNodeConfig = require('../../model/data-node-config');
 const XMLRuleLoader = require('./xml-rule-loader');
 const XmlHelper = require('./xml-helper');
+const TypeHelper = require('../../../util/type-helper');
 
 const fs = require('fs');
 const path = require('path');
 const xml = require('xml');
 const url = require('url');
-const TypeHelper = require('../../../util/type-helper');
+const SchemaConfig = require('../../model/schema-config');
 
 class XMLSchemaLoader {
 
@@ -23,6 +24,7 @@ class XMLSchemaLoader {
     #dataHosts = new Map();
     #dataNodes = new Map();
     #tableRules= new Map();
+    #schemas = new Map();
 
     constructor(schemaFile, ruleFile) {
         let ruleLoader = new XMLRuleLoader(ruleFile);
@@ -36,14 +38,17 @@ class XMLSchemaLoader {
         parser.parse(XMLSchemaLoader.#DEFAULT_DTD, schemaFile);
     }
 
-    /**
-     * dataHost name -> DataHostConfig
-     */
+    /** A map:  dataHost name -> DataHostConfig */
     get dataHosts() { return this.#dataHosts; }
 
+    /** A map: dataNode name -> DataNodeConfig */
     get dataNodes() { return this.#dataNodes; }
 
+    /** A map: tableRule name -> TableRuleConfig */
     get tableRules() { return this.#tableRules; }
+
+    /** A map: schema name -> SchemaConfig */
+    get schemas() { return this.#schemas; }
 
 } // XMLSchemaLoader
 
@@ -64,14 +69,99 @@ class Parser {
 
         this.parseDataHosts(root);
         this.parseDataNodes(root);
+        this.parseSchemas(root);
+    }
+
+    parseSchemas(root) {
+        const schElements = root.getElementsByTagName('schema');
+        const n = schElements.length;
+
+        for (let i = 0; i < n; ++i) {
+            const schElem = schElements[i];
+            const schAttrs = schElem.attributes;
+            const m = schAttrs.length;
+            const name = XmlHelper.parseStrAttr('name', schElem);
+            let dataNode = '', randomDataNode = '', sqlMaxLimit = -1;
+            let checkSQLschema = false, defDbType = '';
+
+            for (let j = 0; j < m; ++j) {
+                const schAttr = schAttrs[j];
+                const attrName = schAttr.name;
+                switch (attrName) {
+                    case 'name':
+                        // Parsed
+                        break;
+                    case 'dataNode':
+                        dataNode = XmlHelper.parseStrAttr(attrName, schElem, name, '');
+                        break;
+                    case 'randomDataNode':
+                        randomDataNode = XmlHelper.parseStrAttr(attrName, schElem, name, '');
+                        break;
+                    case 'checkSQLschema':
+                        checkSQLschema = XmlHelper.parseStrAttr(attrName, schElem, name, '') 
+                            === 'true';
+                        break;
+                    case 'sqlMaxLimit':
+                        sqlMaxLimit = XmlHelper.parseIntAttr(attrName, schElem, name, -1);
+                        break;
+                    default:
+                        throw new ConfigError(`Unknown attr ${attrName} in the schema ${i + 1}`);
+                }
+            }
+
+            if (dataNode) {
+                let dnList = [dataNode];
+                this.checkDataNodeExists(dnList);
+                let dataNodes = this.#loader.dataNodes;
+                let dataHost = dataNodes.get(dataNode).dataHost;
+                let dataHosts = this.#loader.dataHosts;
+                defDbType = dataHosts.get(dataHost).dbType;
+            }
+
+            const tables = this.parseTables(schElem);
+            const schemas = this.#loader.schemas;
+            if (schemas.has(name)) {
+                throw new ConfigError(`schema '${name}' duplicated!`);
+            }
+            if (tables.size === 0 && dataNode === '') {
+                let er = `schema '${name}' no table, so dataNode attribute required!`;
+                throw new ConfigError(er);
+            }
+
+            const schConfig = new SchemaConfig(name, dataNode, tables, sqlMaxLimit, 
+                checkSQLschema, randomDataNode);
+            if (defDbType !== '') {
+                schConfig.defaultDataNodeDbType = defDbType;
+                if ('mysql' !== defDbType.toLowerCase()) {
+                    schConfig.needSupportMultiDBType = true;
+                }
+            }
+            
+            // TODO
+        }
+    }
+
+    parseTables(schemaElem) {
+        const tables = new Map();
+
+        return tables;
+    }
+
+    checkDataNodeExists(dnList) {
+        const dataNodes = this.#loader.dataNodes;
+        dnList.forEach(dn => {
+            if (!dataNodes.has(dn)) {
+                throw new ConfigError(`dataNode '${dn}' is not found!`);
+            }
+        });
     }
 
     parseDataNodes(root) {
-        let nodeElems = root.getElementsByTagName('dataNode');
-        let n = nodeElems.length;
+        let nodeElements = root.getElementsByTagName('dataNode');
+        let n = nodeElements.length;
 
         for (let i = 0; i < n; ++i) {
-            let nodeElem = nodeElems[i];
+            let nodeElem = nodeElements[i];
             let attrs = nodeElem.attributes;
             let attr = attrs.getNamedItem('name');
             const name = attr? attr.value.trim(): null;
