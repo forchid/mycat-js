@@ -15,6 +15,7 @@ class TableRuleConfig {
     #rule;
 
     constructor(name, rule) {
+        StringHelper.ensureNotBlank(name, 'tableRule name');
         this.name = name;
         TypeHelper.ensureInstanceof(rule, RuleConfig, 'rule');
         this.#rule = rule;

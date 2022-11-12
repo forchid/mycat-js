@@ -22,17 +22,17 @@ class DataHostConfig {
     #readHosts = new Map();
     #dataNodes = new Set();
 
-    maxCon = SystemConfig.DEFAULT_POOL_SIZE;
-    minCon = 10;
-    balance = PhysicalDBPool.BALANCE_NONE;
-    balanceType = PhysicalDBPool.RANDOM;
-    writeType = PhysicalDBPool.WRITE_ONLYONE_NODE;
-    connectionInitSql = '';
-    filters = 'mergeStat';
-    logTime = PhysicalDBPool.LOG_TIME;
-    slaveIDs = '';
+    #maxCon = SystemConfig.DEFAULT_POOL_SIZE;
+    #minCon = 10;
+    #balance = PhysicalDBPool.BALANCE_NONE;
+    #balanceType = PhysicalDBPool.RANDOM;
+    #writeType = PhysicalDBPool.WRITE_ONLYONE_NODE;
+    #connectionInitSql = '';
+    #filters = 'mergeStat';
+    #logTime = PhysicalDBPool.LOG_TIME;
+    #slaveIDs = '';
     notSwitch = DataHostConfig.CAN_SWITCH_DS;
-    maxRetryCount = 3;
+    #maxRetryCount = 3;
 
     constructor(name, dbType, dbDriver, writeHosts, readHosts, 
         switchType, slaveThreshold, tempReadHostAvailable) {
@@ -99,6 +99,51 @@ class DataHostConfig {
         return this.#slaveThreshold;
     }
 
+    get maxCon() { return this.#maxCon; }
+
+    set maxCon(maxCon) {
+        let n = TypeHelper.parseIntDecimal(maxCon, 'maxCon');
+        if (n < 0) throw new ConfigError(`maxCon negative: ${maxCon}`);
+        this.#maxCon = n;
+    }
+
+    get minCon() { return this.#minCon; }
+
+    set minCon(minCon) {
+        let n = TypeHelper.parseIntDecimal(minCon, 'minCon');
+        if (n < 0) throw new ConfigError(`minCon negative: ${minCon}`);
+        this.#minCon = n;
+    }
+
+    get balance() { return this.#balance; }
+
+    set balance(balance) {
+        let n = TypeHelper.parseIntDecimal(balance, 'balance');
+        if (n < PhysicalDBPool.BALANCE_NONE 
+            || n > PhysicalDBPool.BALANCE_ALL_READ) {
+            throw new ConfigError(`balance ${balance} unknown!`);
+        }
+        this.#balance = n;
+    }
+
+    get balanceType() { return this.#balanceType; }
+
+    set balanceType(balanceType) {
+        let n = TypeHelper.parseIntDecimal(balanceType, 'balanceType');
+        this.#balanceType = n;
+    }
+
+    get writeType() { return this.#writeType; }
+
+    set writeType(writeType) {
+        let n = TypeHelper.parseIntDecimal(writeType, 'writeType');
+        if (n < PhysicalDBPool.WRITE_ONLYONE_NODE 
+            || n > PhysicalDBPool.WRITE_RANDOM_NODE) {
+            throw new ConfigError(`writeType ${writeType} unknown!`);
+        }
+        this.#writeType = n;
+    }
+
     get tempReadHostAvailable() {
         return this.#tempReadHostAvailable;
     }
@@ -116,6 +161,7 @@ class DataHostConfig {
     }
 
     set heartbeatSQL(heartbeatSQL) {
+        TypeHelper.ensureString(heartbeatSQL, 'heartbeatSQL');
         this.#heartbeatSQL = heartbeatSQL;
         let find = DataHostConfig.#HB_SLV_SQL_PATTERN.test(heartbeatSQL);
         if (find) this.#isShowSlaveSql = true;
@@ -124,9 +170,54 @@ class DataHostConfig {
         if (find) this.#isShowClusterSql = true;
     }
 
+    get connectionInitSql() {
+        return this.#connectionInitSql;
+    }
+
+    set connectionInitSql(connectionInitSql) {
+        TypeHelper.ensureString(connectionInitSql, 'connectionInitSql');
+        this.#connectionInitSql = connectionInitSql;
+    }
+
+    get filters() {
+        return this.#filters;
+    }
+
+    set filters(filters) {
+        TypeHelper.ensureString(filters, 'filters');
+        this.#filters = filters;
+    }
+
+    get slaveIDs() {
+        return this.#slaveIDs;
+    }
+
+    set slaveIDs(slaveIDs) {
+        TypeHelper.ensureString(slaveIDs, 'slaveIDs');
+        this.#slaveIDs = slaveIDs;
+    }
+
     addDataNode(nodeName) {
         StringHelper.ensureNotBlank(nodeName, 'nodeName');
         this.#dataNodes.add(nodeName);
+    }
+
+    get logTime() {
+        return this.#logTime;
+    }
+
+    set logTime(logTime) {
+        TypeHelper.ensureInteger(logTime, 'logTime');
+        this.#logTime = logTime;
+    }
+
+    get maxRetryCount() {
+        return this.#maxRetryCount;
+    }
+
+    set maxRetryCount(maxRetryCount) {
+        TypeHelper.ensureInteger(maxRetryCount, 'maxRetryCount');
+        this.#maxRetryCount = maxRetryCount;
     }
 
     /** A switchType value: not auto switch write source. */

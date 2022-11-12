@@ -249,8 +249,8 @@ class Parser {
             if (i == -1) {
                 throw new ConfigError(`url '${urls}' format error in ${tagName} '${host}'`);
             }
-            ip = a.slice(0, i).trim();
-            port = a.slice(i + 1).trim();
+            ip = urls.slice(0, i).trim();
+            port = urls.slice(i + 1).trim();
             port = TypeHelper.parseIntDecimal(port, 'port');
         } else {
             let u = urls.slice(5);

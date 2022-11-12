@@ -8,9 +8,9 @@ const StringHelper = require('../../util/string-helper');
 // 
 class DataNodeConfig {
 
-    #name;
-	#database;
-    #dataHost;
+    #name = '';
+	#database = '';
+    #dataHost = '';
 
     constructor(name, database, dataHost) {
         StringHelper.ensureNotBlank(name, 'name');

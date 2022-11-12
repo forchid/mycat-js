@@ -54,7 +54,7 @@ function run() {
         });
     });
 
-    test.run(console.DEBUG);
+    test.run();
 }
 
 module.exports = run;
