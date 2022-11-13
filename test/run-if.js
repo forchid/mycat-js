@@ -1,5 +1,5 @@
 
-const SystemConfig = require('../config/system-config');
+const SystemConfig = require('../config/model/system-config');
 const process = require('process');
 const path = require('path');
 const test = require('test');

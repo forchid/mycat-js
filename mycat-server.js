@@ -1,4 +1,4 @@
-const SystemConfig = require('./config/system-config');
+const SystemConfig = require('./config/model/system-config');
 const MycatConfig = require('./config/mycat-config');
 
 class MycatServer {

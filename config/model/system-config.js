@@ -7,10 +7,16 @@ class SystemConfig {
     static #ARGV = parseArgv(); //{ props: {}, args: [] };
     static #PROP_SYS_HOME = 'MYCAT_HOME';
     static #PROP_LOG_FILE_DISABLED = 'disable-log-file';
+    static #DEFAULT_PORT = 8066;
+
+    // Instance fields
+    #serverPort = SystemConfig.#DEFAULT_PORT;
 
     constructor() {
         
     }
+
+    get serverPort() { return this.#serverPort; }
 
     static getProperty(prop, def) {
         const value = this.#ARGV.props[prop];

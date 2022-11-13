@@ -2,7 +2,7 @@ const PhysicalDBPool = require("../../backend/data-source/physical-db-pool");
 const StringHelper = require('../../util/string-helper');
 const TypeHelper = require("../../util/type-helper");
 const ConfigError = require("../config-error");
-const SystemConfig = require("../system-config");
+const SystemConfig = require("./system-config");
 
 class DataHostConfig {
 

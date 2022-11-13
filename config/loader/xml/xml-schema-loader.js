@@ -1,4 +1,4 @@
-const SystemConfig = require('../../system-config');
+const SystemConfig = require('../../model/system-config');
 const ConfigError = require('../../config-error');
 const DataHostConfig = require('../../model/data-host-config');
 const PhysicalDBPool = require('../../../backend/data-source/physical-db-pool');

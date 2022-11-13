@@ -1,4 +1,4 @@
-const SystemConfig = require("../../config/system-config");
+const SystemConfig = require("../../config/model/system-config");
 const test = require('test');
 
 test.setup();

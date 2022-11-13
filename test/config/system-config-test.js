@@ -1,4 +1,4 @@
-const SystemConfig = require('../../config/system-config');
+const SystemConfig = require('../../config/model/system-config');
 const IoHelper = require('../../util/io-helper');
 const runIf = require('../run-if');
 

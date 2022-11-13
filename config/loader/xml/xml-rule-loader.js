@@ -1,4 +1,4 @@
-const SystemConfig = require('../../system-config');
+const SystemConfig = require('../../model/system-config');
 const XmlHelper = require('./xml-helper');
 const ConfigError = require('../../config-error');
 const ObjectHelper = require('../../../util/object-helper');
