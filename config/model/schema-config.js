@@ -37,6 +37,7 @@ class SchemaConfig {
 
     get dataNode() { return this.#dataNode; }
 
+    /** A map: table name -> table config. */
     get tables() { return this.#tables; }
 
     get defaultMaxLimit() { return this.#defaultMaxLimit; }

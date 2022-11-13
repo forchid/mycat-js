@@ -81,6 +81,11 @@ class SystemConfig {
         return null;
     }
 
+    static get enableTestDebug() {
+        const props = this.#ARGV.props;
+        return !!props['enable-test-debug'];
+    }
+
     static resetLogger() {
         console.reset();
 

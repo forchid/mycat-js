@@ -2,13 +2,9 @@ const StringHelper = require('../../util/string-helper');
 const ArgumentError = require('../../lang/argument-error');
 const runIf = require('../run-if');
 
-const test = require('test');
-
 runIf(__filename, run);
 
 function run() {
-    test.setup();
-
     describe('StringHelper', () => {
         it('ensureNotBlank()', () => {
             StringHelper.ensureNotBlank('a');
@@ -116,8 +112,6 @@ function run() {
             }
         }); // mapJavaClassName()
     });
-
-    test.run();
 }
 
 module.exports = run;

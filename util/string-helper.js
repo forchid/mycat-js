@@ -10,6 +10,8 @@ class StringHelper {
                 throw new ArgumentError(`string is blank`);
             else
                 throw new ArgumentError(`${name} is blank`);
+        } else {
+            return str; // OK
         }
     }
 

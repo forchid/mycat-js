@@ -1,14 +1,10 @@
 const TypeHelper = require('../../util/type-helper');
 const runIf = require('../run-if');
-
-const test = require('test');
 const ArgumentError = require('../../lang/argument-error');
 
 runIf(__filename, run);
 
 function run() {
-    test.setup();
-
     const Cat = require('./cat');
 
     describe('TypeHelper', () => {
@@ -288,8 +284,6 @@ function run() {
             });
         });
     });
-
-    test.run();
 }
 
 module.exports = run;

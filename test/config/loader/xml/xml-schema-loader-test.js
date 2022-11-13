@@ -5,13 +5,10 @@ const DBHostConfig = require('../../../../config/model/db-host-config');
 const DataNodeConfig = require('../../../../config/model/data-node-config');
 
 const path = require('path');
-const test = require('test');
 
 runIf(__filename, run);
 
 function run() {
-    test.setup();
-
     describe('XmlSchemaLoader', () => {
         let loader = null;
 
@@ -308,8 +305,6 @@ function run() {
             }
         });
     });
-
-    test.run();
 }
 
 module.exports = run;

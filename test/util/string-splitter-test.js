@@ -1,12 +1,9 @@
 const StringSplitter = require('../../util/string-splitter');
 const runIf = require('../run-if');
 
-const test = require('test');
-
 runIf(__filename, run);
 
 function run() {
-    test.setup();
     let [ fi, se, th, le, ri ] = [ ',', '$', '-', '0', '0' ];
 
     describe('StringSplitter', () => {
@@ -454,8 +451,6 @@ function run() {
             }
         });
     });
-
-    test.run();
 }
 
 module.exports = run;

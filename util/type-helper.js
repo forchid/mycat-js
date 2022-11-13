@@ -5,7 +5,7 @@ class TypeHelper {
     static ensureInstanceof(obj, objClass, name) {
         if (objClass instanceof Function) {
             if (obj instanceof objClass) {
-                return; // OK
+                return obj; // OK
             }
             let className = objClass.prototype.constructor.name;
             let message = `The ${name || 'object'} ${obj} not a ${className}`;
@@ -22,7 +22,7 @@ class TypeHelper {
             || i instanceof Number) {
             const n = parseInt(i);
             if (i == n && Math.abs(n) <= Number.MAX_SAFE_INTEGER) {
-                return; // OK
+                return i; // OK
             }
         }
 
@@ -38,6 +38,8 @@ class TypeHelper {
         if (typeof s !== 'string' && !(s instanceof String)) {
             name = name? name + ' ': '';
             throw new TypeError(`${name}${s} not a string`);
+        } else {
+            return s; // OK
         }
     }
 
@@ -45,6 +47,8 @@ class TypeHelper {
         if (typeof b !== 'boolean' && !(b instanceof Boolean)) {
             name = name? name + ' ': '';
             throw new TypeError(`${name}${b} not a boolean`);
+        } else {
+            return b; // OK
         }
     }
 

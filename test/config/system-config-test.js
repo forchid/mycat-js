@@ -2,15 +2,12 @@ const SystemConfig = require('../../config/system-config');
 const IoHelper = require('../../util/io-helper');
 const runIf = require('../run-if');
 
-const test = require('test');
 const child_process = require('child_process');
 const path = require('path');
 
 runIf(__filename, run);
 
 function run() {
-    test.setup();
-
     describe('SystemConfig', () => {
         it('getProperty()', () => {
             let val = SystemConfig.getProperty('a');
@@ -111,8 +108,6 @@ function run() {
             assert.ok(!IoHelper.hasFile(logsDir));
         });
     });
-
-    test.run();
 }
 
 module.exports = run;

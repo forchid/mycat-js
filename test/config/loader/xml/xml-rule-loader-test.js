@@ -7,13 +7,10 @@ const TableRuleConfig = require('../../../../config/model/table-rule-config');
 const XMLRuleLoader = require('../../../../config/loader/xml/xml-rule-loader');
 
 const path = require('path');
-const test = require('test');
 
 runIf(__filename, run);
 
 function run() {
-    test.setup();
-
     describe('XmlRuleLoader', () => {
         it('load()', () => {
             let ruleFile = path.join(__dirname, 'rule.xml');
@@ -53,8 +50,6 @@ function run() {
             }
         });
     });
-
-    test.run();
 }
 
 module.exports = run;

@@ -1,13 +1,9 @@
 const ObjectHelper = require('../../util/object-helper');
 const runIf = require('../run-if');
 
-const test = require('test');
-
 runIf(__filename, run);
 
 function run() {
-    test.setup();
-
     const Cat = require('./cat');
 
     describe('ObjectHelper', () => {
@@ -46,8 +42,6 @@ function run() {
             cat.meow();
         });
     });
-
-    test.run();
 }
 
 module.exports = run;
