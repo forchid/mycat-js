@@ -1,5 +1,6 @@
 const XMLConfigLoader = require("./loader/xml/xml-config-loader");
 const XMLSchemaLoader = require("./loader/xml/xml-schema-loader");
+const XMLServerLoader = require("./loader/xml/xml-server-loader");
 
 class ConfigInitializer {
 
@@ -11,9 +12,11 @@ class ConfigInitializer {
 	#dataNodes = new Map();
 	#dataHosts = new Map();
 
-    constructor(loadDataHost) {
-        let schemaLoader = new XMLSchemaLoader();
-        let configLoader = new XMLConfigLoader(schemaLoader);
+    constructor(options) {
+        options = options || {};
+        let schemaLoader = new XMLSchemaLoader(options.schemaFile, options.ruleFile);
+        let serverLoader = new XMLServerLoader(options.serverFile);
+        let configLoader = new XMLConfigLoader(schemaLoader, serverLoader);
 
         this.#system = configLoader.system;
         this.#users = configLoader.users;

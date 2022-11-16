@@ -67,11 +67,9 @@ class SystemConfig {
     #serverBacklog = 2048;
 	#charset = SystemConfig.#DEFAULT_CHARSET; // MyCat network conn charset
 	#processors = SystemConfig.#DEFAULT_PROCESSORS;
-	#processorExecutor = (SystemConfig.#DEFAULT_PROCESSORS != 1) ? 
-        SystemConfig.#DEFAULT_PROCESSORS * 2 : 4;;
+	#processorExecutor = (SystemConfig.#DEFAULT_PROCESSORS != 1) ?
+        (SystemConfig.#DEFAULT_PROCESSORS * 2): 4;
     
-    #removeGraveAccent = 1;
-
     #frontSocketSoRcvbuf = 1024 * 1024;
 	#frontSocketSoSndbuf = 4 * 1024 * 1024;
     #frontSocketNoDelay = 1; // 0=false
@@ -105,6 +103,7 @@ class SystemConfig {
     #sequenceHandlerType = SystemConfig.#SEQUENCE_HANDLER_LOCAL_FILE;
     #sequenceMySqlRetryCount = SystemConfig.#DEFAULT_SEQUENCE_MYSQL_RETRY_COUNT;
     #sequenceMySqlWaitTime = SystemConfig.#DEFAULT_SEQUENCE_MYSQL_WAIT_TIME;
+    #sequenceHandlerClass = SystemConfig.#SEQUENCE_HANDLER_CLASS;
 
 	#maxPreparedStmtCount = SystemConfig.#DEFAULT_MAX_PREPARED_STMT_COUNT;
     // Buffer pool limit = bufferPoolPageSize * bufferPoolPageNumber, the pool only 
@@ -148,7 +147,7 @@ class SystemConfig {
 	#packetHeaderSize = 4;
 	#maxPacketSize = 16 * 1024 * 1024;
 	#mycatNodeId = 1;
-	#useCompression =0;	
+	#useCompression = 0;	
 	#useSqlStat = 1;
 	#subqueryRelationshipCheck = false;
 	
@@ -180,6 +179,8 @@ class SystemConfig {
 	#enableWriteQueueFlowControl = false;
     #writeQueueStopThreshold = 10 * 1024;
     #writeQueueRecoverThreshold = 512;
+
+    #removeGraveAccent = 1;
 
     constructor() {
         
@@ -443,7 +444,23 @@ class SystemConfig {
     }
 
     set frontSocketNoDelay(noDelay) {
-        this.#frontSocketNoDelay = TypeHelper.parseIntDecimal(noDelay, 'frontSocketNoDelay');
+        let n = TypeHelper.parseIntDecimal(noDelay, 'frontSocketNoDelay');
+        if (n === 0 || n === 1) {
+            this.#frontSocketNoDelay = n;
+            console.warn(`frontSocketNoDelay ${n} not used`);
+        } else {
+            throw new ConfigError(`frontSocketNoDelay ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get frontWriteQueueSize() {
+        return this.#frontWriteQueueSize;
+    }
+
+    set frontWriteQueueSize(size) {
+        let n = TypeHelper.parseIntDecimal(size, 'frontWriteQueueSize');
+        this.#frontWriteQueueSize = n;
+        console.warn(`frontWriteQueueSize ${n} not used`);
     }
 
     get backSocketSoRcvbuf() {
@@ -477,7 +494,13 @@ class SystemConfig {
     }
 
     set backSocketNoDelay(noDelay) {
-        this.#backSocketNoDelay = TypeHelper.parseIntDecimal(noDelay, 'backSocketNoDelay');
+        let n = TypeHelper.parseIntDecimal(noDelay, 'backSocketNoDelay');
+        if (n === 0 || n === 1) {
+            this.#backSocketNoDelay = n;
+            console.warn(`backSocketNoDelay ${n} not used`);
+        } else {
+            throw new ConfigError(`backSocketNoDelay ${n}: it should be 0 or 1`);
+        }
     }
 
     /** MySQL protocol header size 4. Don't set it! */
@@ -650,6 +673,225 @@ class SystemConfig {
         } else {
             throw new ConfigError(`useOffHeapForMerge ${n} unknown!`);
         }
+    }
+
+    get removeGraveAccent() {
+        return this.#removeGraveAccent;
+    }
+
+    set removeGraveAccent(remove) {
+        let n = TypeHelper.parseIntDecimal(remove, 'removeGraveAccent');
+        if (n === 0 || n === 1) {
+            this.#removeGraveAccent = n;
+        } else {
+            throw new ConfigError(`removeGraveAccent ${n} unknown!`);
+        }
+    }
+
+    /** Whether need password for login. 0 need, 1 not, and default 0. */
+    get nonePasswordLogin() {
+        return this.#nonePasswordLogin;
+    }
+
+    set nonePasswordLogin(none) {
+        let n = TypeHelper.parseIntDecimal(none, 'nonePasswordLogin');
+        if (n === 0 || n === 1) {
+            this.#nonePasswordLogin = n;
+        } else {
+            throw new ConfigError(`nonePasswordLogin ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get ignoreUnknownCommand() {
+        return this.#ignoreUnknownCommand;
+    }
+
+    set ignoreUnknownCommand(ignore) {
+        let n = TypeHelper.parseIntDecimal(ignore, 'ignoreUnknownCommand');
+        if (n === 0 || n === 1) {
+            this.#ignoreUnknownCommand = n;
+        } else {
+            throw new ConfigError(`ignoreUnknownCommand ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get useHandshakeV10() {
+        return this.#useHandshakeV10;
+    }
+
+    set useHandshakeV10(use) {
+        let n = TypeHelper.parseIntDecimal(use, 'useHandshakeV10');
+        if (n === 0 || n === 1) {
+            this.#useHandshakeV10 = n;
+        } else {
+            throw new ConfigError(`useHandshakeV10 ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get useSqlStat() {
+        return this.#useSqlStat;
+    }
+
+    set useSqlStat(use) {
+        let n = TypeHelper.parseIntDecimal(use, 'useSqlStat');
+        if (n === 0 || n === 1) {
+            this.#useSqlStat = n;
+        } else {
+            throw new ConfigError(`useSqlStat ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get sequnceHandlerPattern() {
+        return this.#sequenceHandlerPattern;
+    }
+
+    set sequnceHandlerPattern(pattern) {
+        this.#sequenceHandlerPattern = StringHelper.ensureNotBlank(pattern, 'sequnceHandlerPattern');
+    }
+
+    get sequenceHandlerPattern() {
+        return this.#sequenceHandlerPattern;
+    }
+
+    set sequenceHandlerPattern(pattern) {
+        this.#sequenceHandlerPattern = StringHelper.ensureNotBlank(pattern, 'sequenceHandlerPattern');
+    }
+
+    get subqueryRelationshipCheck() {
+        return this.#subqueryRelationshipCheck;
+    }
+
+    set subqueryRelationshipCheck(check) {
+        this.#subqueryRelationshipCheck = ('true' === check || true === check);
+    }
+
+    get sequenceHandlerClass() {
+        return this.#sequenceHandlerClass;
+    }
+
+    set sequenceHandlerClass(className) {
+        this.#sequenceHandlerClass = StringHelper.ensureNotBlank(className, 'sequenceHandlerClass');
+    }
+
+    get useCompression() {
+        return this.#useCompression;
+    }
+
+    set useCompression(use) {
+        let n = TypeHelper.parseIntDecimal(use, 'useCompression');
+        if (n === 0 || n === 1) {
+            this.#useCompression = n;
+        } else {
+            throw new ConfigError(`useCompression ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get processorBufferPoolType() {
+        return this.#processorBufferPoolType;
+    }
+
+    set processorBufferPoolType(type) {
+        let n = TypeHelper.parseIntDecimal(type, 'processorBufferPoolType');
+        this.#processorBufferPoolType = n;
+    }
+
+    /** Parsing max length for SQL parser, default 65535 byte. */
+    get maxStringLiteralLength() {
+        return this.#maxStringLiteralLength;
+    }
+
+    set maxStringLiteralLength(len) {
+        let n = TypeHelper.parseIntDecimal(len, 'maxStringLiteralLength');
+        if (n > 0) {
+            this.#maxStringLiteralLength = n;
+        } else {
+            throw new ConfigError(`maxStringLiteralLength ${n} less than 1`);
+        }
+    }
+
+    get memoryPageSize() {
+        return this.#memoryPageSize;
+    }
+
+    set memoryPageSize(size) {
+        this.#memoryPageSize = StringHelper.ensureNotBlank(size, 'memoryPageSize');
+    }
+
+    get spillsFileBufferSize() {
+        return this.#spillsFileBufferSize;
+    }
+
+    set spillsFileBufferSize(size) {
+        this.#spillsFileBufferSize = StringHelper.ensureNotBlank(size, 'spillsFileBufferSize');
+    }
+
+    get useStreamOutput() {
+        return this.#useStreamOutput;
+    }
+
+    set useStreamOutput(use) {
+        let n = TypeHelper.parseIntDecimal(use, 'useStreamOutput');
+        if (n === 0 || n === 1) {
+            this.#useStreamOutput = n;
+        } else {
+            throw new ConfigError(`useStreamOutput ${n}: it should be 0 or 1`);
+        }
+    }
+
+    get systemReserveMemorySize() {
+        return this.#systemReserveMemorySize;
+    }
+
+    set systemReserveMemorySize(size) {
+        this.#systemReserveMemorySize = StringHelper.ensureNotBlank(size, 'systemReserveMemorySize');
+    }
+
+    get useZKSwitch() {
+        return this.#useZKSwitch;
+    }
+
+    set useZKSwitch(use) {
+        this.#useZKSwitch = ('true' === use || true === use);
+    }
+
+    get XARecoveryLogBaseDir() {
+        return this.#XARecoveryLogBaseDir;
+    }
+
+    set XARecoveryLogBaseDir(dir) {
+        this.#XARecoveryLogBaseDir = StringHelper.ensureNotBlank(dir, 'XARecoveryLogBaseDir');
+    }
+
+    get XARecoveryLogBaseDir() {
+        return this.#XARecoveryLogBaseDir;
+    }
+
+    set XARecoveryLogBaseDir(dir) {
+        this.#XARecoveryLogBaseDir = StringHelper.ensureNotBlank(dir, 'XARecoveryLogBaseDir');
+    }
+
+    get XARecoveryLogBaseName() {
+        return this.#XARecoveryLogBaseName;
+    }
+
+    set XARecoveryLogBaseName(name) {
+        this.#XARecoveryLogBaseName = StringHelper.ensureNotBlank(name, 'XARecoveryLogBaseName');
+    }
+
+    get strictTxIsolation() {
+        return this.#strictTxIsolation;
+    }
+
+    set strictTxIsolation(strictTxIso) {
+        this.#strictTxIsolation = ('true' === strictTxIso || true === strictTxIsolation);
+    }
+
+    get parallExecute() {
+        return this.#parallExecute;
+    }
+
+    set parallExecute(p) {
+        this.#parallExecute = TypeHelper.parseIntDecimal(p, 'parallExecute');
     }
 
     // Static properties or methods

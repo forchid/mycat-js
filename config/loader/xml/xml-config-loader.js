@@ -19,10 +19,11 @@ class XMLConfigLoader {
     #firewall = null;
     #cluster = null;
 
-    constructor(schemaLoader) {
+    constructor(schemaLoader, serverLoader) {
+        serverLoader = serverLoader || new XMLServerLoader();
         TypeHelper.ensureInstanceof(schemaLoader, XMLSchemaLoader, 'schemaLoader');
-
-        const serverLoader = new XMLServerLoader();
+        TypeHelper.ensureInstanceof(serverLoader, XMLServerLoader, 'serverLoader');
+        
         this.#system = serverLoader.system;
         this.#users = serverLoader.users;
         this.#firewall = serverLoader.firewall;

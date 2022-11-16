@@ -95,7 +95,7 @@ class XmlHelper {
 
             if (beans.length == 0) value = node.textContent.trim();
             else value = this.parseBean(beans[0]);
-            params.set(name, value || null);
+            params.set(name, value);
         }
 
         return params;

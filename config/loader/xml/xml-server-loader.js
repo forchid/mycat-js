@@ -3,6 +3,8 @@ const FirewallConfig = require("../../model/firewall-config");
 const path = require('path');
 const fs = require('fs');
 const xml = require('xml');
+const XmlHelper = require("./xml-helper");
+const ObjectHelper = require("../../../util/object-helper");
 
 class XMLServerLoader {
 
@@ -63,7 +65,15 @@ class Parser {
     }
 
     parseSystem(root) {
-        // TODO
+        const sysElements = root.getElementsByTagName('system');
+        const n = sysElements.length;
+        const system = this.#loader.system;
+
+        for (let i = 0; i < n; ++i) {
+            let sysElem = sysElements[i];
+            let props = XmlHelper.parsePropertyChildren(sysElem);
+            ObjectHelper.fill(system, props);
+        }
     }
 
     parseUsers(root) {
