@@ -5,7 +5,7 @@ const ConfigError = require("../../config-error");
 class DataNodePrivilege {
 
     #name = '';
-	#dml = [ 0, 0, 0, 0 ];
+    #dml = [ 0, 0, 0, 0 ];
 
     get name() {
         return this.#name;

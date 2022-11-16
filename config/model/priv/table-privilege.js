@@ -1,7 +1,7 @@
 class TablePrivilege {
 
     #name = '';
-	#dml = [ 0, 0, 0, 0 ];
+    #dml = [ 0, 0, 0, 0 ];
 
     get name() {
         return this.#name;

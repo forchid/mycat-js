@@ -6,8 +6,8 @@ const ConfigError = require("../../config-error");
 class SchemaPrivilege {
     
     #name = '';
-	#dml = [ 0, 0, 0, 0];
-	#tablePrivileges = new Map();
+    #dml = [ 0, 0, 0, 0];
+    #tablePrivileges = new Map();
 
     get name() {
         return this.#name;

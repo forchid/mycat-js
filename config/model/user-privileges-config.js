@@ -6,13 +6,13 @@ const SchemaPrivilege = require('./priv/schema-privilege');
 class UserPrivilegesConfig {
 
     #check = false;
-
-	/** Schema level privileges: schema -> table CRUD privileges */
-	#schemaPrivileges = new Map();
-
-	/** DataNode level privileges: dataNode -> dataNode CRUD privileges */
-	#dataNodePrivileges = new Map();
-
+    
+    /** Schema level privileges: schema -> table CRUD privileges */
+    #schemaPrivileges = new Map();
+    
+    /** DataNode level privileges: dataNode -> dataNode CRUD privileges */
+    #dataNodePrivileges = new Map();
+    
     get check() {
         return this.#check;
     }
