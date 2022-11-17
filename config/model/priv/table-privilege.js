@@ -1,3 +1,6 @@
+const StringHelper = require('../../../util/string-helper');
+const TypeHelper = require('../../../util/type-helper');
+
 class TablePrivilege {
 
     #name = '';
@@ -24,6 +27,11 @@ class TablePrivilege {
         }
     }
 
+    get dmlText() {
+        let res = '';
+        this.dml.forEach(i => res += i);
+        return res;
+    }
 }
 
 module.exports = TablePrivilege;

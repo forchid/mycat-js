@@ -56,7 +56,7 @@ class UserConfig {
     }
 
     set benchmark(benchmark) {
-        let n = TypeHelper.ensureInteger(benchmark, 'user benchmark');
+        let n = TypeHelper.parseIntDecimal(benchmark, 'user benchmark');
         if (n >= 0) {
             this.#benchmark = n;
         } else {
@@ -78,7 +78,7 @@ class UserConfig {
     }
 
     set defaultAccount(defAccount) {
-        this.#defaultAccount = ('true' === defAccount || true === defAccount);
+        this.#defaultAccount = (true === defAccount || 'true' === defAccount);
     }
 
     get readOnly() { 

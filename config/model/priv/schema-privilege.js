@@ -7,6 +7,7 @@ class SchemaPrivilege {
     
     #name = '';
     #dml = [ 0, 0, 0, 0];
+    /** A Map: table name -> table privileges */
     #tablePrivileges = new Map();
 
     get name() {
@@ -28,6 +29,12 @@ class SchemaPrivilege {
         } else {
             throw new ConfigError(`schema dml length should be 4`);
         }
+    }
+
+    get dmlText() {
+        let res = '';
+        this.dml.forEach(i => res += i);
+        return res;
     }
 
     addTablePrivilege(tab, priv) {

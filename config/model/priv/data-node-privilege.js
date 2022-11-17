@@ -28,6 +28,11 @@ class DataNodePrivilege {
         }
     }
 
+    get dmlText() {
+        let res = '';
+        this.dml.forEach(i => res += i);
+        return res;
+    }
 }
 
 module.exports = DataNodePrivilege;

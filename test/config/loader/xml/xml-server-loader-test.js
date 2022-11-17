@@ -2,6 +2,11 @@ const runIf = require('../../../run-if');
 const XmlServerLoader = require('../../../../config/loader/xml/xml-server-loader');
 
 const path = require('path');
+const UserConfig = require('../../../../config/model/user-config');
+const UserPrivilegesConfig = require('../../../../config/model/user-privileges-config');
+const SchemaPrivilege = require('../../../../config/model/priv/schema-privilege');
+const TablePrivilege = require('../../../../config/model/priv/table-privilege');
+const DataNodePrivilege = require('../../../../config/model/priv/data-node-privilege');
 
 runIf(__filename, run);
 
@@ -61,6 +66,102 @@ function run() {
             assert.equal(10000, sys.serverBacklog);
             assert.equal('gbk', sys.charset);
             assert.equal(2, sys.txIsolation);
+        });
+
+        it ('load users', () => {
+            const users = loader.users;
+            assert.ok(users instanceof Map);
+            for (let [key, value] of users) {
+                assert.ok(value instanceof UserConfig);
+                let user = value;
+                let privileges = user.privilegesConfig;
+                assert.ok(privileges instanceof UserPrivilegesConfig);
+                let schPrivileges = privileges.schemaPrivileges;
+                assert.ok(schPrivileges instanceof Map);
+                let dnPrivileges = privileges.dataNodePrivileges;
+                assert.ok(dnPrivileges instanceof Map);
+                switch (key) {
+                    case 'root':
+                        assert.equal(key, user.name);
+                        assert.equal('123456', user.password);
+                        assert.equal('', user.encryptPassword);
+                        assert.equal(1000, user.benchmark);
+                        assert.equal(true, user.defaultAccount);
+                        assert.equal(false, user.readOnly);
+                        assert.equal('TESTDB', user.defaultSchema);
+                        assert.ok(user.schemas instanceof Set);
+                        assert.equal(1, user.schemas.size);
+                        user.schemas.forEach(sch => assert.equal('TESTDB', sch));
+                        // Priv
+                        assert.ok(privileges.check);
+                        assert.equal(1, schPrivileges.size);
+                        assert.equal(2, dnPrivileges.size);
+                        // Schema priv
+                        for (let [key, value] of schPrivileges) {
+                            assert.ok(value instanceof SchemaPrivilege);
+                            let schPriv = value;
+                            switch(key) {
+                                case 'TESTDB':
+                                    assert.equal(key, schPriv.name);
+                                    assert.equal(4, schPriv.dml.length);
+                                    assert.equal('0110', schPriv.dmlText);
+                                    // Tab priv
+                                    let tabPriv = schPriv.getTablePrivilege('tb01');
+                                    assert.ok(tabPriv instanceof TablePrivilege);
+                                    assert.equal('tb01', tabPriv.name);
+                                    assert.equal(4, tabPriv.dml.length);
+                                    assert.equal('0000', tabPriv.dmlText);
+
+                                    tabPriv = schPriv.getTablePrivilege('tb02');
+                                    assert.ok(tabPriv instanceof TablePrivilege);
+                                    assert.equal('tb02', tabPriv.name);
+                                    assert.equal(4, tabPriv.dml.length);
+                                    assert.equal('1111', tabPriv.dmlText);
+                                    break;
+                                default:
+                                    throw new Error(`schema '${key}'?`);
+                            }
+                        }
+                        // DataNode priv
+                        for (let [key, value] of dnPrivileges) {
+                            assert.ok(value instanceof DataNodePrivilege);
+                            let dnPriv = value;
+                            switch(key) {
+                                case 'dn0':
+                                    assert.equal(key, dnPriv.name);
+                                    assert.equal(4, dnPriv.dml.length);
+                                    assert.equal('0001', dnPriv.dmlText);
+                                    break;
+                                case 'dn1':
+                                    assert.equal(key, dnPriv.name);
+                                    assert.equal(4, dnPriv.dml.length);
+                                    assert.equal('1001', dnPriv.dmlText);
+                                    break;
+                                default:
+                                    throw new Error(`dataNode '${key}'?`);
+                            }
+                        }
+                        break;
+                    case 'test':
+                        assert.equal(key, user.name);
+                        assert.equal('test', user.password);
+                        assert.equal('', user.encryptPassword);
+                        assert.equal(0, user.benchmark);
+                        assert.equal(false, user.defaultAccount);
+                        assert.equal(true, user.readOnly);
+                        assert.equal('TESTDB', user.defaultSchema);
+                        assert.ok(user.schemas instanceof Set);
+                        assert.equal(1, user.schemas.size);
+                        user.schemas.forEach(sch => assert.equal('TESTDB', sch));
+                        // Priv
+                        assert.ok(!privileges.check);
+                        assert.equal(0, schPrivileges.size);
+                        assert.equal(0, dnPrivileges.size);
+                        break;
+                    default:
+                        throw new Error(`user '${key}'?`);
+                }
+            }
         });
     });
 }

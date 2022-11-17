@@ -116,18 +116,18 @@
 		<property name="password">123456</property>
 		<property name="schemas">TESTDB</property>
 		<property name="defaultSchema">TESTDB</property>
-		<!--No MyCAT Database selected 错误前会尝试使用该schema作为schema，
-			不设置则为null,报错 -->
 		
-		<!-- 表级 DML 权限设置 -->
+		<!-- 表级DML权限设置 -->
 		<!-- 		
 		<privileges check="false">
 			<schema name="TESTDB" dml="0110" >
 				<table name="tb01" dml="0000"></table>
 				<table name="tb02" dml="1111"></table>
 			</schema>
-		</privileges>		
-		-->
+            <dataNode name='dn0' dml='0001'></dataNode>
+            <dataNode name='dn1' dml='0001'></dataNode>
+		</privileges>
+        -->
 	</user>
 
 	<user name="user">
