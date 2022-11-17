@@ -13,6 +13,11 @@ class FirewallConfig {
         
     }
 
+    init() {
+        // NOOP
+    }
+
+    /** A Map: host pattern -> user configs */
     get whiteHostMasks() {
         return this.#whiteHostMasks;
     }
@@ -21,6 +26,7 @@ class FirewallConfig {
         this.#whiteHostMasks = TypeHelper.ensureInstanceof(masks, Map, 'whiteHostMasks');
     }
 
+    /** A Map: host name -> user configs */
     get whiteHosts() {
         return this.#whiteHosts;
     }

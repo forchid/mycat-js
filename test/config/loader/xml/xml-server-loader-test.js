@@ -7,6 +7,7 @@ const UserPrivilegesConfig = require('../../../../config/model/user-privileges-c
 const SchemaPrivilege = require('../../../../config/model/priv/schema-privilege');
 const TablePrivilege = require('../../../../config/model/priv/table-privilege');
 const DataNodePrivilege = require('../../../../config/model/priv/data-node-privilege');
+const FirewallConfig = require('../../../../config/model/firewall-config');
 
 runIf(__filename, run);
 
@@ -160,6 +161,78 @@ function run() {
                         break;
                     default:
                         throw new Error(`user '${key}'?`);
+                }
+            }
+        });
+
+        it ('load firewall', () => {
+            const firewall = loader.firewall;
+            assert.ok(!firewall.check);
+            const whiteHosts = firewall.whiteHosts;
+            assert.equal(1, whiteHosts.size);
+            const whiteHostMasks = firewall.whiteHostMasks;
+            assert.equal(4, whiteHostMasks.size);
+            assert.equal(0, firewall.blacklist.length);
+
+            for (let [key, value] of whiteHosts) {
+                assert.ok(typeof key == 'string' || key instanceof String);
+                assert.ok(value instanceof Array);
+                const host = key;
+                const users = value;
+                const n = users.length;
+                assert.equal(2, n);
+                switch (host) {
+                    case '192.168.1.99':
+                        for (let i = 0; i < n; ++i) {
+                            let user = users[i];
+                            switch(user.name) {
+                                case 'root':
+                                case 'test':
+                                    break;
+                                default:
+                                    throw new Error(`host user '${user.name}'?`);
+                            }
+                        }
+                        break;
+                    default:
+                        throw new Error(`host '${host}'?`);
+                }
+            }
+
+            for (let [key, value] of whiteHostMasks) {
+                assert.ok(key instanceof RegExp);
+                assert.ok(value instanceof Array);
+                const users = value;
+                const n = users.length;
+                let host = FirewallConfig.createHostMask(key);
+                switch(host) {
+                    case '127.0.0.*':
+                        assert.equal(2, n);
+                        for (let i = 0; i < n; ++i) {
+                            let user = users[i];
+                            switch(user.name) {
+                                case 'root':
+                                case 'test':
+                                    break;
+                                default:
+                                    throw new Error(`host user '${user.name}'?`);
+                            }
+                        }
+                        break;
+                    case '127.0.*':
+                        assert.equal(1, n);
+                        assert.equal('root', users[0].name);
+                        break;
+                    case '1*7.*':
+                        assert.equal(1, n);
+                        assert.equal('root', users[0].name);
+                        break;
+                    case '1*7.0.0.*':
+                        assert.equal(1, n);
+                        assert.equal('root', users[0].name);
+                        break;
+                    default:
+                        throw new Error(`host '${host}'?`);
                 }
             }
         });

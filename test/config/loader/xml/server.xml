@@ -88,21 +88,22 @@
 	</system>
 	
 	<!-- 全局SQL防火墙设置 -->
-	<!--白名单可以使用通配符%或着*-->
-	<!--例如<host host="127.0.0.*" user="root"/>-->
-	<!--例如<host host="127.0.*" user="root"/>-->
-	<!--例如<host host="127.*" user="root"/>-->
-	<!--例如<host host="1*7.*" user="root"/>-->
-	<!--这些配置情况下对于127.0.0.1都能以root账户登录-->
-	<!--
+	<!-- 白名单可以使用通配符%或着* -->
+	<host host="127.0.0.*" user="test,root"/>
+	<host host="127.0.*" user="root"/>
+	<host host="192.168.1.99" user="root,test"/>
+	<host host="1*7.%" user="root"/>
+	<!-- 这些配置情况下对于127.0.0.1都能以root账户登录 -->
 	<firewall>
 	   <whitehost>
-	      <host host="1*7.0.0.*" user="root"/>
+	      <host host="1%7.0.0.*" user="root"/>
 	   </whitehost>
        <blacklist check="false">
+          <!-- 
+          <property name="selelctAllow">true</property>
+          -->
        </blacklist>
 	</firewall>
-	-->
 
 	<user name="root" defaultAccount="true">
 		<property name="password">123456</property>

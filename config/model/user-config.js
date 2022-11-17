@@ -15,7 +15,7 @@ class UserConfig {
     #password = '';             // plain-text
     #encryptPassword = '';      // cipher-text
     #benchmark = 0;             // load limit, default 0 as un-limit
-    #privilegesConfig = null;   // SQL table level CRUD privileges
+    #privilegesConfig = new UserPrivilegesConfig(); // SQL table level CRUD privileges
 	
     #defaultAccount = false;    // password-less login or not
     #readOnly = false;

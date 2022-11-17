@@ -201,7 +201,64 @@ class Parser {
     }
 
     parseFirewall(root) {
-        // TODO
+        const firewall = this.#loader.firewall;
+        const userConfigs = this.#loader.users;
+        const whiteHosts = new Map();
+        const whiteHostMasks = new Map();
+        const hostElements = root.getElementsByTagName('host');
+        const n = hostElements.length;
+        // Parse host
+        for (let i = 0; i < n; ++i) {
+            const hostElem = hostElements[i];
+            const host = XmlHelper.parseStrAttr('host', hostElem);
+            if (host === '') {
+                throw new ConfigError(`host attr value blank in ${this.file}`);
+            }
+            const hosts = StringSplitter.split(host, ',');
+            
+            const user = XmlHelper.parseStrAttr('user', hostElem);
+            if (user === '') {
+                throw new ConfigError(`host user attr value blank in ${this.file}`);
+            }
+            const users = StringSplitter.split(user, ',');
+
+            const ucConfigs = [];
+            users.forEach( user => {
+                const conf = userConfigs.get(user);
+                if (conf) {
+                    ucConfigs.push(conf);
+                } else {
+                    throw new ConfigError(`host user '${user}' not found in ${this.file}`);
+                }
+            });
+
+            hosts.forEach(host => {
+                if (host.indexOf('*') != -1 || host.indexOf('%') != -1) {
+                    let p = FirewallConfig.createHostMaskPattern(host);
+                    whiteHostMasks.set(p, ucConfigs);
+                } else {
+                    whiteHosts.set(host, ucConfigs);
+                }
+            });
+        }
+        firewall.whiteHosts = whiteHosts;
+        firewall.whiteHostMasks = whiteHostMasks;
+
+        // Parse blacklist
+        const blElements = root.getElementsByTagName('blacklist');
+        const m = blElements.length;
+        for (let i = 0; i < m; ++i) {
+            const blElem = blElements[i];
+            const check = 'true' === XmlHelper.parseStrAttr('check', 
+                blElem, undefined, 'false');
+            firewall.check = check;
+            // TODO WallConfig
+            const propElements = blElem.getElementsByTagName('property');
+            if (propElements.length > 0) {
+                throw new ConfigError(`blacklist property not supported in ${this.file}`);
+            }
+        }
+        firewall.init();
     }
 
 }
