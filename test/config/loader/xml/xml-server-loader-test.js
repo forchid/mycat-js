@@ -8,6 +8,8 @@ const SchemaPrivilege = require('../../../../config/model/priv/schema-privilege'
 const TablePrivilege = require('../../../../config/model/priv/table-privilege');
 const DataNodePrivilege = require('../../../../config/model/priv/data-node-privilege');
 const FirewallConfig = require('../../../../config/model/firewall-config');
+const ClusterConfig = require('../../../../config/model/cluster-config');
+const ClusterNodeConfig = require('../../../../config/model/cluster-node-config');
 
 runIf(__filename, run);
 
@@ -233,6 +235,60 @@ function run() {
                         break;
                     default:
                         throw new Error(`host '${host}'?`);
+                }
+            }
+        });
+
+        it ('load cluster config', () => {
+            const cluster = loader.cluster;
+            assert.ok(cluster instanceof ClusterConfig);
+            const nodes = cluster.nodes;
+            const groups = cluster.groups;
+            assert.ok(nodes instanceof Map);
+            assert.equal(2, nodes.size);
+            assert.ok(groups instanceof Map);
+            assert.equal(2, groups.size);
+
+            for (let [key, value] of nodes) {
+                assert.ok(value instanceof ClusterNodeConfig);
+                let conf = value;
+                switch (key) {
+                    case 'node1':
+                        assert.equal(key, conf.name);
+                        assert.equal('localhost-1', conf.host);
+                        assert.equal(8166, conf.port);
+                        assert.equal(1, conf.weight);
+                        break;
+                    case 'node2':
+                        assert.equal(key, conf.name);
+                        assert.equal('localhost-2', conf.host);
+                        assert.equal(8166, conf.port);
+                        assert.equal(2, conf.weight);
+                        break;
+                    default:
+                        throw new Error(`node ${key}?`);
+                }
+            }
+
+            for (let [key, value] of groups) {
+                assert.ok(value instanceof Array);
+                let nodeList = value;
+                switch (key) {
+                    case 'default':
+                    case 'group1':
+                        assert.equal(2, nodeList.length);
+                        nodeList.forEach (node => {
+                            if (node === 'node1' || node === 'node2') {
+                                let conf = nodes.get(node);
+                                assert.ok(conf instanceof ClusterNodeConfig);
+                                assert.equal(node, conf.name);
+                            } else {
+                                throw new Error(`node '${node}' in group ${key}?`);
+                            }
+                        });
+                        break;
+                    default:
+                        throw new Error(`group ${key}?`);
                 }
             }
         });

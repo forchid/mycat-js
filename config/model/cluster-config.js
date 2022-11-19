@@ -5,7 +5,7 @@ class ClusterConfig {
 
     constructor(nodes, groups) {
         this.#nodes = nodes;
-        this.groups = groups;
+        this.#groups = groups;
     }
 
     get nodes() { return this.#nodes; }

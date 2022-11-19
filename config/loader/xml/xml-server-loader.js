@@ -5,14 +5,17 @@ const ObjectHelper = require("../../../util/object-helper");
 const UserConfig = require("../../model/user-config");
 const ConfigError = require("../../config-error");
 const StringSplitter = require('../../../util/string-splitter');
-
-const path = require('path');
-const fs = require('fs');
-const xml = require('xml');
 const UserPrivilegesConfig = require("../../model/user-privileges-config");
 const SchemaPrivilege = require("../../model/priv/schema-privilege");
 const TablePrivilege = require("../../model/priv/table-privilege");
 const DataNodePrivilege = require("../../model/priv/data-node-privilege");
+const TypeHelper = require("../../../util/type-helper");
+const ClusterNodeConfig = require("../../model/cluster-node-config");
+const ClusterConfig = require("../../model/cluster-config");
+
+const path = require('path');
+const fs = require('fs');
+const xml = require('xml');
 
 class XMLServerLoader {
 
@@ -22,7 +25,7 @@ class XMLServerLoader {
     #system = new SystemConfig();
     #users = new Map();
     #firewall = new FirewallConfig();
-    #cluster = null;
+    #cluster = new ClusterConfig(new Map(), new Map());
 
     constructor(serverFile) {
         let conf = SystemConfig.confPath;
@@ -197,7 +200,93 @@ class Parser {
     }
 
     parseCluster(root, port) {
-        // TODO
+        const nodes = new Map();
+        const groups = new Map();
+        // xml structure:
+        // server
+        //    |- node(name)*
+        //    |    | - property(host | weight)
+        //    |- group(name)*
+        //    |    | - property(nodeList): node list ref node names
+        const nodeElements = root.getElementsByTagName('node');
+        const n = nodeElements.length;
+        const hosts = new Set();
+
+        // Parse node*
+        for (let i = 0; i < n; ++i) {
+            const nodeElem = nodeElements[i];
+            const name = XmlHelper.parseStrAttr('name', nodeElem);
+            if (nodes.has(name)) {
+                throw new ConfigError(`node name '${name}' duplicated in ${this.file}`);
+            }
+            const props = XmlHelper.parsePropertyChildren(nodeElem);
+            if (props.size !== 2) {
+                let er = `node '${name}' needs host and weight property children in ${this.file}`;
+                throw new ConfigError(er);
+            }
+            let host = null, weight = 0;
+            for (let [key, value] of props) {
+                switch (key) {
+                    case 'host':
+                        host = value;
+                        break;
+                    case 'weight':
+                        weight = TypeHelper.parseIntDecimal(value, 'node weight');
+                        break;
+                    default:
+                        let er = `Unknown node '${name}' property '${key}' in ${this.file}`;
+                        throw new ConfigError(er);
+                }
+            }
+            if (!host) {
+                let er = `node '${name}' property host blank in ${this.file}`;
+                throw new ConfigError(er);
+            }
+            if (weight < 1) {
+                let er = `node '${name}' property weight ${weight} less than 1 in ${this.file}`;
+                throw new ConfigError(er);
+            }
+
+            const conf = new ClusterNodeConfig(name, host, port, weight);
+            nodes.set(name, conf);
+            hosts.add(host);
+        }
+
+        // Parse group
+        const groupElements = root.getElementsByTagName('group');
+        const m = groupElements.length;
+        for (let i = 0; i < m; ++i) {
+            const groupElem = groupElements[i];
+            const name = XmlHelper.parseStrAttr('name', groupElem);
+            const props = XmlHelper.parsePropertyChildren(groupElem);
+            if (props.size !== 1) {
+                let er = `group '${name}' needs one property named 'nodeList' in ${this.file}`;
+                throw new ConfigError(er);
+            }
+            let nodeList = props.get('nodeList');
+            if (!nodeList) {
+                let er = `The property named 'nodeList' of group '${name}' is empty in ${this.file}`;
+                throw new ConfigError(er);
+            }
+            nodeList = StringSplitter.split(nodeList, ',');
+            nodeList.forEach(node => {
+                if (!nodes.has(node)) {
+                    let er = `The node '${node}' of group '${name}' not existing in ${this.file}`;
+                    throw new ConfigError(er);
+                }
+            });
+            groups.set(name, nodeList);
+        }
+
+        if (!groups.has('default')) {
+            const a = [];
+            for (let node of nodes.keys()) {
+                a.push(node);
+            }
+            groups.set('default', a);
+        }
+
+        return new ClusterConfig(nodes, groups);
     }
 
     parseFirewall(root) {

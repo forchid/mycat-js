@@ -129,4 +129,19 @@
 		<property name="defaultSchema">TESTDB</property>
 	</user>
 
+    <!-- Cluster config -->
+    <node name='node1'>
+        <property name='host'>localhost-1</property>
+        <property name='weight'>1</property>
+    </node>
+
+    <node name='node2'>
+        <property name='host'>localhost-2</property>
+        <property name='weight'>2</property>
+    </node>
+
+    <group name="group1">
+        <property name="nodeList">node1,node2</property>
+    </group>
+
 </mycat:server>
