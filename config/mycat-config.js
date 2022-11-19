@@ -3,7 +3,8 @@ const ConfigInitializer = require("./config-initializer");
 class MycatConfig {
 
     constructor() {
-        let confInit = new ConfigInitializer(true);
+        let loadDataHost = true;
+        let confInit = new ConfigInitializer({ loadDataHost });
     }
     
 }

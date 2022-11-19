@@ -3,7 +3,7 @@ const ConfigError = require('../../config-error');
 const DataHostConfig = require('../../model/data-host-config');
 const PhysicalDBPool = require('../../../backend/data-source/physical-db-pool');
 const StringSplitter = require('../../../util/string-splitter');
-const DBHostConfig = require('../../model/db-host-config');
+const DbHostConfig = require('../../model/db-host-config');
 const DataNodeConfig = require('../../model/data-node-config');
 const XMLRuleLoader = require('./xml-rule-loader');
 const XmlHelper = require('./xml-helper');
@@ -114,12 +114,12 @@ class Parser {
                 }
             }
 
+            let dataNodes = this.#loader.dataNodes;
+            let dataHosts = this.#loader.dataHosts;
             if (dataNode) {
                 let dnList = [dataNode];
                 this.checkDataNodeExists(dnList);
-                let dataNodes = this.#loader.dataNodes;
                 let dataHost = dataNodes.get(dataNode).dataHost;
-                let dataHosts = this.#loader.dataHosts;
                 defDbType = dataHosts.get(dataHost).dbType;
             }
 
@@ -137,12 +137,20 @@ class Parser {
                 checkSQLschema, randomDataNode);
             if (defDbType !== '') {
                 schConfig.defaultDataNodeDbType = defDbType;
-                if ('mysql' !== defDbType.toLowerCase()) {
+                if ('mysql' !== defDbType) {
                     schConfig.needSupportMultiDBType = true;
                 }
             }
             
-            // TODO
+            const dbTypes = new Map();
+            for (let [dnName, dnConfig] of dataNodes) {
+                let hostName = dnConfig.dataHost;
+                let dhConfig = dataHosts.get(hostName);
+                let dbType = dhConfig.dbType;
+                dbTypes.set(dnName, dbType);
+            }
+            schConfig.dataNodeDbTypes = dbTypes;
+            schemas.set(name, schConfig);
         }
     }
 
@@ -512,8 +520,9 @@ class Parser {
                 host, name, 0) > 0;
             const writeType = XmlHelper.parseIntAttr('writeType', host, name, 0);
 
-            const dbDriver = XmlHelper.parseStrAttr('dbDriver', host, name, '');
-            const dbType = XmlHelper.parseStrAttr('dbType', host, name);
+            const dbDriver = XmlHelper.parseStrAttr('dbDriver', host, name, 'native')
+                .toLowerCase();
+            const dbType = XmlHelper.parseStrAttr('dbType', host, name).toLowerCase();
             const filters = XmlHelper.parseStrAttr('filters', host, name, 'mergeStat');
             const defLogTime = PhysicalDBPool.LOG_TIME;
             const logTime = XmlHelper.parseIntAttr('logTime', host, name, defLogTime);
@@ -526,11 +535,11 @@ class Parser {
             const initConSQL = XmlHelper.parseChildText('connectionInitSql', host, name, '');
         
             // parse writeHost, readHost
-            let { writeDbConfs, readHostsMap } = this.parseDbHosts(name, host, dbType, 
+            let { writeDbConfigs, readHostsMap } = this.parseDbHosts(name, host, dbType, 
                 dbDriver, maxCon, minCon, filters, logTime);
 
             const config = new DataHostConfig(name, dbType, dbDriver,
-                writeDbConfs, readHostsMap, switchType, slaveThreshold, 
+                writeDbConfigs, readHostsMap, switchType, slaveThreshold, 
                 tempReadHostAvailable);
             config.maxCon = maxCon;
             config.minCon = minCon;
@@ -550,7 +559,7 @@ class Parser {
     }
 
     parseDbHosts(dataHost, dhElem, dbType, dbDriver, maxCon, minCon, filters, logTime) {
-        const writeDbConfs = [];
+        const writeDbConfigs = [];
         const readHostsMap = new Map();
         const writeNodes = dhElem.getElementsByTagName('writeHost');
         const writeNodeNames = new Set();
@@ -566,13 +575,13 @@ class Parser {
                 throw new ConfigError(`writeHost '${hostName}' duplicated!`);
             }
             writeNodeNames.add(hostName);
-            writeDbConfs[i] = writeDbConf;
+            writeDbConfigs[i] = writeDbConf;
 
             // parse readHost
             const readNodes = writeNode.getElementsByTagName('readHost');
             const m = readNodes.length;
             if (m > 0) {
-                const readDbConfs = [];
+                const readDbConfigs = [];
                 const readNodeNames = new Set();
                 for (let j = 0; j < m; ++j) {
                     const readNode = readNodes[i];
@@ -583,13 +592,13 @@ class Parser {
                         throw new ConfigError(`readHost '${hostName}' duplicated!`);
                     }
                     readNodeNames.add(hostName);
-                    readDbConfs[j] = readDbConf;
+                    readDbConfigs[j] = readDbConf;
                 }
-                readHostsMap.set(i, readDbConfs);
+                readHostsMap.set(i, readDbConfigs);
             }
         }
 
-        return { writeDbConfs, readHostsMap };
+        return { writeDbConfigs, readHostsMap };
     }
 
     parseDbHost(dataHost, hostNode, dbType, dbDriver,  maxCon, minCon, filters, logTime) {
@@ -597,7 +606,7 @@ class Parser {
         const tagName = hostNode.tagName;
 
         const urls = XmlHelper.parseStrAttr('url', hostNode, host);
-        const user = XmlHelper.parseStrAttr('user', hostNode, host);
+        const user = XmlHelper.parseStrAttr('user', hostNode, host, '');
         const password = XmlHelper.parseStrAttr('password', hostNode, host, '');
         const usingDecrypt = XmlHelper.parseStrAttr('usingDecrypt', hostNode, host, '');
         const checkAlive = 'true' == XmlHelper.parseStrAttr('checkAlive', hostNode, host, 'true');
@@ -609,22 +618,29 @@ class Parser {
 
         let ip;
         let port;
-        if ('native' == dbDriver.toLowerCase()) {
-            let i = urls.indexOf(':');
-            if (i == -1) {
-                throw new ConfigError(`url '${urls}' format error in ${tagName} '${host}'`);
-            }
-            ip = urls.slice(0, i).trim();
-            port = urls.slice(i + 1).trim();
-            port = TypeHelper.parseIntDecimal(port, 'port');
+        if (DbHostConfig.dbEmbedded(dbType)) {
+            ip = 'localhost';
+            port = 0;
         } else {
-            let u = urls.slice(5);
-            u = url.parse(u, false, true);
-            ip = u.hostname;
-            port = TypeHelper.parseIntDecimal(u.port, 'port');
+            if ('native' === dbDriver) {
+                let i = urls.indexOf(':');
+                if (i == -1) {
+                    let e = `url '${urls}' format error in ${tagName} '${host}'`;
+                    throw new ConfigError(e);
+                }
+                ip = urls.slice(0, i).trim();
+                port = urls.slice(i + 1).trim();
+                port = TypeHelper.parseIntDecimal(port, 'port');
+            } else {
+                console.warn(`dbDriver '${dbDriver}' is deprecated in mycat-js.`);
+                let u = urls.slice(5);
+                u = url.parse(u, false, true);
+                ip = u.hostname;
+                port = TypeHelper.parseIntDecimal(u.port, 'port');
+            }
         }
-
-        const config = new DBHostConfig(host, ip, port, urls, user, 
+        
+        const config = new DbHostConfig(host, ip, port, urls, user, 
             passwordEncrypt, password, checkAlive);
         config.dbType = dbType;
         config.maxCon = maxCon;

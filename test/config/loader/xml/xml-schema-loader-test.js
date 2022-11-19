@@ -1,7 +1,7 @@
 const DataHostConfig = require('../../../../config/model/data-host-config');
 const runIf = require('../../../run-if');
 const XmlSchemaLoader = require('../../../../config/loader/xml/xml-schema-loader');
-const DBHostConfig = require('../../../../config/model/db-host-config');
+const DbHostConfig = require('../../../../config/model/db-host-config');
 const DataNodeConfig = require('../../../../config/model/data-node-config');
 
 const path = require('path');
@@ -86,7 +86,7 @@ function run() {
                         assert.equal(2, n);
                         for (let i = 0; i < n; ++i) {
                             let wHost = writeHosts[i];
-                            assert.ok(wHost instanceof DBHostConfig);
+                            assert.ok(wHost instanceof DbHostConfig);
                             switch(i) {
                                 case 0:
                                     assert.equal('hostM1', wHost.hostName);
@@ -132,7 +132,7 @@ function run() {
                         assert.equal(1, n);
                         for (let i = 0; i < n; ++i) {
                             let wHost = writeHosts[i];
-                            assert.ok(wHost instanceof DBHostConfig);
+                            assert.ok(wHost instanceof DbHostConfig);
                             switch(i) {
                                 case 0:
                                     assert.equal('hostM1', wHost.hostName);

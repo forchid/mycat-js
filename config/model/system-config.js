@@ -895,6 +895,10 @@ class SystemConfig {
     }
 
     // Static properties or methods
+    static get DEFAULT_IDLE_TIMEOUT() {
+        SystemConfig.#DEFAULT_IDLE_TIMEOUT;
+    }
+
     static getProperty(prop, def) {
         const value = this.#ARGV.props[prop];
         if (value === undefined) return def;

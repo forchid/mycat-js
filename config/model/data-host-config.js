@@ -10,8 +10,8 @@ class DataHostConfig {
     static #HB_CLS_SQL_PATTERN = /\s*show\s+status\s+like\s+'wsrep%'/i;
 
     #name = '';
-    #dbType = '';
-    #dbDriver = '';
+    #dbType = '';   // mysql, sqlite etc.
+    #dbDriver = ''; // native, jdbc(only compatible with MyCat-java, not used).
     #switchType = DataHostConfig.DEFAULT_SWITCH_DS;
     #slaveThreshold = -1; // default never read from slave
     #tempReadHostAvailable = false;
@@ -26,7 +26,7 @@ class DataHostConfig {
     #minCon = 10;
     #balance = PhysicalDBPool.BALANCE_NONE;
     #balanceType = PhysicalDBPool.RANDOM;
-    #writeType = PhysicalDBPool.WRITE_ONLYONE_NODE;
+    #writeType = PhysicalDBPool.WRITE_ONLY_ONE_NODE;
     #connectionInitSql = '';
     #filters = 'mergeStat';
     #logTime = PhysicalDBPool.LOG_TIME;
@@ -137,7 +137,7 @@ class DataHostConfig {
 
     set writeType(writeType) {
         let n = TypeHelper.parseIntDecimal(writeType, 'writeType');
-        if (n < PhysicalDBPool.WRITE_ONLYONE_NODE 
+        if (n < PhysicalDBPool.WRITE_ONLY_ONE_NODE 
             || n > PhysicalDBPool.WRITE_RANDOM_NODE) {
             throw new ConfigError(`writeType ${writeType} unknown!`);
         }

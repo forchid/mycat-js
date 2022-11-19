@@ -2,8 +2,9 @@ const PhysicalDBPool = require("../../backend/data-source/physical-db-pool");
 const StringHelper = require("../../util/string-helper");
 const TypeHelper = require("../../util/type-helper");
 const ConfigError = require("../config-error");
+const SystemConfig = require("./system-config");
 
-class DBHostConfig {
+class DbHostConfig {
 
     #hostName = '';
     #ip = '';
@@ -21,11 +22,13 @@ class DBHostConfig {
     #logTime = PhysicalDBPool.LOG_TIME;
     #weight = 0;
 
+    #idleTimeout = SystemConfig.DEFAULT_IDLE_TIMEOUT;
+
     constructor(hostName, ip, port, url, user, 
         password, encryptPassword, checkAlive) {
         // Check
         StringHelper.ensureNotBlank(hostName, 'db host');
-        StringHelper.ensureNotBlank(hostName, 'db ip');
+        StringHelper.ensureNotBlank(ip, 'db ip');
         TypeHelper.ensureInteger(port, 'db port');
         if (port < 0) throw new ConfigError(`db port negative: ${port}`);
         StringHelper.ensureNotBlank(url, 'db url');
@@ -103,6 +106,20 @@ class DBHostConfig {
         let n = TypeHelper.parseIntDecimal(weight, 'weight');
         this.#weight = n;
     }
+
+    get idleTimeout() {
+        return this.#idleTimeout;
+    }
+
+    set idleTimeout(timeout) {
+        let n = TypeHelper.parseIntDecimal(timeout, 'idleTimeout');
+        this.#idleTimeout = n;
+    }
+
+    static dbEmbedded(dbType) {
+        return ('sqlite' === dbType);
+    }
+
 }
 
-module.exports = DBHostConfig;
+module.exports = DbHostConfig;
