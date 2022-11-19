@@ -77,7 +77,7 @@ class XmlHelper {
         }
     }
 
-    static parsePropertyChildren(parent) {
+    static parsePropertyChildren(parent, file) {
         let childNodes = parent.childNodes;
         let n = childNodes.length;
         const params = new Map();
@@ -90,6 +90,11 @@ class XmlHelper {
             }
 
             const name = this.parseStrAttr('name', node);
+            if (params.has(name)) {
+                let tagName = parent.tagName;
+                let er = `The property named '${name}' of ${tagName} duplicated${file? ' in '+file: ''}!`;
+                throw new ConfigError(er);
+            }
             const beans = node.getElementsByTagName('bean');
             let value;
 

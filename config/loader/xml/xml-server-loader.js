@@ -219,7 +219,7 @@ class Parser {
             if (nodes.has(name)) {
                 throw new ConfigError(`node name '${name}' duplicated in ${this.file}`);
             }
-            const props = XmlHelper.parsePropertyChildren(nodeElem);
+            const props = XmlHelper.parsePropertyChildren(nodeElem, this.file);
             if (props.size !== 2) {
                 let er = `node '${name}' needs host and weight property children in ${this.file}`;
                 throw new ConfigError(er);
@@ -238,12 +238,17 @@ class Parser {
                         throw new ConfigError(er);
                 }
             }
-            if (!host) {
-                let er = `node '${name}' property host blank in ${this.file}`;
+            if (host) {
+                if (hosts.has(host)) {
+                    let er = `The property host '${host}' of node '${name}' duplicated in ${this.file}`;
+                    throw new ConfigError(er); 
+                }
+            } else {
+                let er = `The property host of node '${name}' is blank in ${this.file}`;
                 throw new ConfigError(er);
             }
             if (weight < 1) {
-                let er = `node '${name}' property weight ${weight} less than 1 in ${this.file}`;
+                let er = `The property weight ${weight} of node '${name}' less than 1 in ${this.file}`;
                 throw new ConfigError(er);
             }
 
