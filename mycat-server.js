@@ -6,9 +6,19 @@ class MycatServer {
     static #INSTANCE = null;
 
     #config = null;
+    #online = false;
 
     constructor() {
         this.#config = new MycatConfig();
+        this.#online = true;
+    }
+
+    get online() {
+        return this.#online;
+    }
+
+    static get NAME() {
+        return 'MyCat';
     }
 
     static get instance() {
