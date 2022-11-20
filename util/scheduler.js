@@ -64,38 +64,51 @@ class Scheduler {
         args = args || [];
         TypeHelper.ensureInstanceof(args, Array, 'args');
 
-        const sem = new co.Semaphore(1);
         let tm = setTimeout(() => {
+            const cur = co.current();
             try {
-                sem.acquire();
+                cur.canceled = false;
+                tm._cos = [cur];
                 if (isFun) task(... args);
                 else task.run(... args);
             } finally {
-                sem.release();
+                delete tm._cos;
+                delete cur.canceled;
                 if (per) {
                     let fin = true;
                     let tm = setInterval(() => {
                         if (fin || this.concur) {
+                            const cur = co.current();
+                            tm._cos = tm._cos || [];
                             try {
                                 fin = false;
-                                sem.acquire();
+                                cur.canceled = false;
+                                tm._cos.push(cur);
                                 if (isFun) task(... args);
                                 else task.run(... args);
                             } finally {
                                 fin = true;
-                                sem.release();
+                                let i = 0;
+                                const n = tm._cos.length;
+                                for (; i < n; ) {
+                                    let c = tm._cos[i];
+                                    if (c === cur) break;
+                                    ++i;
+                                }
+                                tm._cos.splice(i, 1);
+                                if (n === 1) delete tm._cos;
+                                delete cur.canceled;
                             }
                         }
                     }, period);
-                    tm.per = true;
+                    tm._per = true;
                     this.#timers.set(name, tm);
                 } else {
                     this.#timers.delete(name);
                 }
             }
         }, initDelay);
-        tm.per = false;
-        tm.sem = sem;
+        tm._per = false;
 
         this.#timers.set(name, tm);
     }
@@ -107,19 +120,19 @@ class Scheduler {
     cancel(name, await) {
         let tm = this.#timers.get(name);
         if (tm) {
-            let sem = null;
-            if (await) {
-                sem = tm.sem;
-                sem.acquire();
+            if (tm._per) clearInterval(tm);
+            else clearTimeout(tm);
+
+            let cos = tm._cos;
+            for (; await && cos && cos.length; ) {
+                let c = cos[0];
+                c.canceled = true;
+                c.join();
+                cos = tm._cos;
             }
-            try {
-                if (tm.per) clearInterval(tm);
-                else clearTimeout(tm);
-                this.#timers.delete(name);
-                return true;
-            } finally {
-                if (sem) sem.release();
-            }
+            
+            this.#timers.delete(name);
+            return true;
         } else {
             return false;
         }
@@ -128,16 +141,15 @@ class Scheduler {
     cancelAll(await) {
         let timers = this.#timers;
         for (let tm of timers.values()) {
-            let sem = null;
-            if (await) {
-                sem = tm.sem;
-                sem.acquire();
-            }
-            try {
-                if (tm.per) clearInterval(tm);
-                else clearTimeout(tm);
-            } finally {
-                if (sem) sem.release();
+            if (tm._per) clearInterval(tm);
+            else clearTimeout(tm);
+
+            let cos = tm._cos;
+            for (; await && cos && cos.length; ) {
+                let c = cos[0];
+                c.canceled = true;
+                c.join();
+                cos = tm._cos;
             }
         }
         timers.clear();
