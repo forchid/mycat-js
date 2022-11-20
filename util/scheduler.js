@@ -95,8 +95,8 @@ class Scheduler {
                                     if (c === cur) break;
                                     ++i;
                                 }
-                                tm._cos.splice(i, 1);
                                 if (n === 1) delete tm._cos;
+                                else tm._cos.splice(i, 1);
                                 delete cur.canceled;
                             }
                         }

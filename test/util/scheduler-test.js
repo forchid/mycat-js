@@ -17,7 +17,7 @@ function run() {
         });
 
         it ('schedule', () => {
-            let n = 0, m = 10, itr = n;
+            let n = 0, m = 2, itr = n;
             sem.acquire();
             scheduler.schedule('a', () => {
                 ++itr;
@@ -34,7 +34,7 @@ function run() {
             assert.equal(false, scheduler.closed);
             assert.equal(0, scheduler.taskCount);
             
-            m = 30;
+            m = 8;
             scheduler.schedule('a', (i) => {
                 assert.equal(2, i);
                 itr += i;
@@ -44,7 +44,7 @@ function run() {
                     scheduler.cancel('a');
                     sem.release();
                 }
-            }, 10, 10, [2]);
+            }, 1, 2, [2]);
             console.log('schedule args timer OK');
             sem.acquire();
             try {
@@ -150,7 +150,9 @@ function run() {
                 a.acquire();
                 n = 3;
                 sem.release();
-                n = 4;
+                let cur = co.current();
+                if (cur.canceled) return;
+                else n = 4;
             };
 
             sem.acquire();
@@ -172,7 +174,7 @@ function run() {
             scheduler.cancel('a', true);
             assert.equal(false, scheduler.closed);
             assert.equal(0, scheduler.taskCount);
-            assert.equal(4, n);
+            assert.equal(3, n);
         });
 
         it ('shutdown', () => {
@@ -203,7 +205,7 @@ function run() {
         });
 
         it ('schedule', () => {
-            let n = 0, m = 10, itr = n;
+            let n = 0, m = 2, itr = n;
             sem.acquire();
             scheduler.schedule('a', () => {
                 ++itr;
@@ -222,7 +224,7 @@ function run() {
             assert.equal(false, scheduler.closed);
             assert.equal(0, scheduler.taskCount);
             
-            m = 30;
+            m = 8;
             itr = n;
             scheduler.schedule('a', (i) => {
                 assert.equal(2, i);
@@ -234,7 +236,7 @@ function run() {
                 } else if (n < m) {
                     n += i;
                 }
-            }, 10, 10, [2]);
+            }, 1, 2, [2]);
             console.log('schedule args timer OK');
             sem.acquire();
             try {
