@@ -29,11 +29,15 @@ class Scheduler {
         return this.#timers.size;
     }
 
+    hasTask(name) {
+        return this.#timers.has(name);
+    }
+
     schedule(name, task, initDelay, period, args) {
         if (this.closed) {
             throw new Error(`Scheduler has been closed!`);
         }
-        if (this.#timers.has(name)) {
+        if (this.hasTask(name)) {
             throw new Error(`The task '${name}' is existing!`);
         }
         const isFun = (task instanceof Function);

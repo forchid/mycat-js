@@ -894,7 +894,122 @@ class SystemConfig {
         this.#parallExecute = TypeHelper.parseIntDecimal(p, 'parallExecute');
     }
 
+    get usingAIO() {
+        return this.#usingAIO;
+    }
+
+    set usingAIO(use) {
+        let n = TypeHelper.parseIntDecimal(use, 'usingAIO');
+        if (n === 0 || n === 1) {
+            this.#usingAIO = n;
+            console.warn(`usingAIO ${n} not used`);
+        } else {
+            throw new ConfigError(`usingAIO should be 0 or 1`);
+        }
+    }
+
+    toString() {
+        return `SystemConfig [
+            authTimeout = ${this.authTimeout},
+            backSocketNoDelay = ${this.backSocketNoDelay},
+            backSocketSoRcvbuf = ${this.backSocketSoRcvbuf},
+            backSocketSoSndbuf = ${this.backSocketSoSndbuf},
+            bigResultSizeSqlCount = ${this.#bigResultSizeSqlCount},
+            bindIp = ${this.bindIp},
+            bufferPoolChunkSize = ${this.bufferPoolChunkSize},
+            bufferPoolPageNumber = ${this.bufferPoolPageNumber},
+            bufferPoolPageSize = ${this.bufferPoolPageSize},
+            catletClassCheckSeconds = ${this.#catletClassCheckSeconds},
+            charset = ${this.charset},
+            checkTableConsistency = ${this.#checkTableConsistency},
+            checkTableConsistencyPeriod = ${this.#checkTableConsistencyPeriod},
+            clearBigSqLResultSetMapMs = ${this.#clearBigSqLResultSetMapMs},
+            clusterHeartbeatPeriod = ${this.#clusterHeartbeatPeriod},
+            clusterHeartbeatRetry = ${this.#clusterHeartbeatRetry},
+            clusterHeartbeatTimeout = ${this.#clusterHeartbeatTimeout},
+            clusterHeartbeatUser = ${this.#clusterHeartbeatUser},
+            dataNodeHeartbeatPeriod = ${this.#dataNodeHeartbeatPeriod},
+            dataNodeIdleCheckPeriod = ${this.#dataNodeIdleCheckPeriod},
+            dataNodeSortedTempDir = ${this.#dataNodeSortedTempDir},
+            defaultMaxLimit = ${this.#defaultMaxLimit},
+            defaultSqlParser = ${this.#defaultSqlParser},
+            enableWriteQueueFlowControl = ${this.#enableWriteQueueFlowControl},
+            fakeMySQLVersion = ${this.#fakeMySQLVersion},
+            flowControlRejectStrategy = ${this.#flowControlRejectStrategy},
+            frontSocketNoDelay = ${this.#frontSocketNoDelay},
+            frontSocketSoRcvbuf = ${this.#frontSocketSoRcvbuf},
+            frontSocketSoSndbuf = ${this.#frontSocketSoSndbuf},
+            frontWriteQueueSize = ${this.#frontWriteQueueSize},
+            globalTableCheckPeriod = ${this.#globalTableCheckPeriod},
+            handleDistributedTransactions = ${this.#handleDistributedTransactions},
+            idleTimeout = ${this.#idleTimeout},
+            ignoreUnknownCommand = ${this.#ignoreUnknownCommand},
+            managerExecutor = ${this.#managerExecutor},
+            managerPort = ${this.#managerPort},
+            maxPacketSize = ${this.#maxPacketSize},
+            maxPreparedStmtCount = ${this.#maxPreparedStmtCount},
+            maxResultSet = ${this.#maxResultSet},
+            maxStringLiteralLength = ${this.#maxStringLiteralLength},
+            memoryPageSize = ${this.#memoryPageSize},
+            multiNodeLimitType = ${this.#multiNodeLimitType},
+            multiNodePatchSize = ${this.#multiNodePatchSize},
+            mycatNodeId = ${this.#mycatNodeId},
+            nonePasswordLogin = ${this.#nonePasswordLogin},
+            packetHeaderSize = ${this.#packetHeaderSize},
+            parallExecute = ${this.#parallExecute},
+            parserCommentVersion = ${this.#parserCommentVersion},
+            processorBufferLocalPercent = ${this.#processorBufferLocalPercent},
+            processorBufferPoolType = ${this.#processorBufferPoolType},
+            processorCheckPeriod = ${this.#processorCheckPeriod},
+            processorExecutor = ${this.#processorExecutor},
+            processors = ${this.#processors},
+            removeGraveAccent = ${this.#removeGraveAccent},
+            sequenceHandlerClass = ${this.#sequenceHandlerClass},
+            sequenceHandlerPattern = ${this.#sequenceHandlerPattern},
+            sequenceHandlerType = ${this.#sequenceHandlerType},
+            sequenceMySqlRetryCount = ${this.#sequenceMySqlRetryCount},
+            sequenceMySqlWaitTime = ${this.#sequenceMySqlWaitTime},
+            serverBacklog = ${this.serverBacklog},
+            serverPort = ${this.#serverPort},
+            spillsFileBufferSize = ${this.#spillsFileBufferSize},
+            sqlExecuteTimeout = ${this.#sqlExecuteTimeout},
+            sqlInterceptor = ${this.#sqlInterceptor},
+            sqlInterceptorFile = ${this.#sqlInterceptorFile},
+            sqlInterceptorType = ${this.#sqlInterceptorType},
+            sqlRecordCount = ${this.#sqlRecordCount},
+            strictTxIsolation = ${this.#strictTxIsolation},
+            subqueryRelationshipCheck = ${this.#subqueryRelationshipCheck},
+            systemReserveMemorySize = ${this.#systemReserveMemorySize},
+            timerExecutor = ${this.#timerExecutor},
+            txIsolation = ${this.#txIsolation},
+            useCompression = ${this.#useCompression},
+            useGlobalTableCheck = ${this.#useGlobalTableCheck},
+            useHandshakeV10 = ${this.#useHandshakeV10},
+            useOffHeapForMerge = ${this.#useOffHeapForMerge},
+            useSqlStat = ${this.#useSqlStat},
+            useStreamOutput = ${this.#useStreamOutput},
+            useZKSwitch = ${this.#useZKSwitch},
+            usingAIO = ${this.#usingAIO},
+            writeQueueRecoverThreshold = ${this.#writeQueueRecoverThreshold},
+            writeQueueStopThreshold = ${this.#writeQueueStopThreshold},
+            XARecoveryLogBaseDir = ${this.#XARecoveryLogBaseDir},
+            XARecoveryLogBaseName = ${this.#XARecoveryLogBaseName}
+        ]`;
+    }
+
     // Static properties or methods
+    static get DEFAULT_BUFFER_CHUNK_SIZE() {
+        return SystemConfig.#DEFAULT_BUFFER_CHUNK_SIZE;
+    }
+    
+    static get DEFAULT_BUFFER_POOL_PAGE_SIZE() {
+        return SystemConfig.#DEFAULT_BUFFER_POOL_PAGE_SIZE;
+    }
+
+	static get DEFAULT_PROCESSORS() {
+        return SystemConfig.#DEFAULT_PROCESSORS;
+    }
+
     static get DEFAULT_IDLE_TIMEOUT() {
         SystemConfig.#DEFAULT_IDLE_TIMEOUT;
     }
