@@ -31,6 +31,7 @@ class ConfigInitializer {
         if (options.loadDataHost) {
             this.#dataHosts = initializer.initDataHosts();
             this.#dataNodes = initializer.initDataNodes();
+            initializer.initHostSchemas();
         }
 
         this.#firewall = configLoader.firewall;
@@ -165,6 +166,24 @@ class Initializer {
         }
         
         return nodes;
+    }
+
+    initHostSchemas() {
+        const config = this.#configInitializer;
+        const dataHosts = config.dataHosts;
+        const dataNodes = config.dataNodes;
+
+        for (let hostPool of dataHosts.values()) {
+            let hostName = hostPool.hostName;
+            let schemas = [];
+            for (let node of dataNodes.values()) {
+                let dbPool = node.dbPool;
+                if (dbPool.hostName === hostName) {
+                    schemas.push(node.database);
+                }
+            }
+            hostPool.schemas = schemas;
+        }
     }
 
     createPhysicalDbPool(dhConfig) {
