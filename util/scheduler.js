@@ -1,7 +1,8 @@
 const TypeHelper = require("./type-helper");
+const co = require('coroutine');
 
 /**
- * A manager of named timers.
+ * A scheduler for named tasks (include periodic task).
  * 
  * @author little-pan
  * @since 2022-11-20
@@ -24,18 +25,28 @@ class Scheduler {
         return this.#closed;
     }
 
-    get timerCount() {
+    get taskCount() {
         return this.#timers.size;
     }
 
-    schedule(name, timer, initDelay, period, args) {
+    schedule(name, task, initDelay, period, args) {
         if (this.closed) {
             throw new Error(`Scheduler has been closed!`);
         }
         if (this.#timers.has(name)) {
-            throw new Error(`The timer '${name}' is existing!`);
+            throw new Error(`The task '${name}' is existing!`);
         }
-        TypeHelper.ensureInstanceof(timer, Function, 'timer');
+        const isFun = (task instanceof Function);
+        if (!isFun) {
+            if (task !== null && task !== undefined) {
+                if (!(task.run instanceof Function)) {
+                    throw new Error(`The task.run not a function!`);
+                }
+                // OK
+            } else {
+                throw new Error(`The task not a function!`);
+            }
+        }
 
         TypeHelper.ensureInteger(initDelay, 'initDelay');
         if (initDelay < 0) {
@@ -53,19 +64,26 @@ class Scheduler {
         args = args || [];
         TypeHelper.ensureInstanceof(args, Array, 'args');
 
+        const sem = new co.Semaphore(1);
         let tm = setTimeout(() => {
             try {
-                timer(... args);
+                sem.acquire();
+                if (isFun) task(... args);
+                else task.run(... args);
             } finally {
+                sem.release();
                 if (per) {
                     let fin = true;
                     let tm = setInterval(() => {
                         if (fin || this.concur) {
                             try {
                                 fin = false;
-                                timer(... args);
+                                sem.acquire();
+                                if (isFun) task(... args);
+                                else task.run(... args);
                             } finally {
                                 fin = true;
+                                sem.release();
                             }
                         }
                     }, period);
@@ -77,35 +95,57 @@ class Scheduler {
             }
         }, initDelay);
         tm.per = false;
+        tm.sem = sem;
 
         this.#timers.set(name, tm);
     }
 
-    delay(name, timer, delay, args) {
-        this.schedule(name, timer, delay, undefined, args);
+    delay(name, task, delay, args) {
+        this.schedule(name, task, delay, undefined, args);
     }
 
-    cancel(name) {
+    cancel(name, await) {
         let tm = this.#timers.get(name);
         if (tm) {
-            if (tm.per) clearInterval(tm);
-            else clearTimeout(tm);
-            this.#timers.delete(name);
-            return true;
+            let sem = null;
+            if (await) {
+                sem = tm.sem;
+                sem.acquire();
+            }
+            try {
+                if (tm.per) clearInterval(tm);
+                else clearTimeout(tm);
+                this.#timers.delete(name);
+                return true;
+            } finally {
+                if (sem) sem.release();
+            }
         } else {
             return false;
         }
     }
 
-    shutdown() {
+    cancelAll(await) {
         let timers = this.#timers;
-
-        this.#closed = true;
         for (let tm of timers.values()) {
-            if (tm.per) clearInterval(tm);
-            else clearTimeout(tm);
+            let sem = null;
+            if (await) {
+                sem = tm.sem;
+                sem.acquire();
+            }
+            try {
+                if (tm.per) clearInterval(tm);
+                else clearTimeout(tm);
+            } finally {
+                if (sem) sem.release();
+            }
         }
         timers.clear();
+    }
+
+    shutdown(await) {
+        this.#closed = true;
+        this.cancelAll(await);
     }
 
 }
