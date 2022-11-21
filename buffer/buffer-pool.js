@@ -56,7 +56,7 @@ class BufferPool {
         while (n > this.totalSize) {
             if (await) {
                 this.#available.clear();
-                this.#available.await();
+                this.#available.wait();
                 n = size + this.allocated;
             } else {
                 throw new BufferError(`Can't allocate buffer: size ${size}`);
@@ -66,7 +66,7 @@ class BufferPool {
         let buffer;
         if (unsafe) buffer = Buffer.allocUnsafe(size);
         else buffer = Buffer.alloc(size);
-        this.allocated += size;
+        this.#allocated += size;
         buffer._allocated = true;
 
         return buffer;
@@ -75,7 +75,7 @@ class BufferPool {
     release(buffer) {
         if (buffer instanceof Buffer) {
             if (buffer._allocated) {
-                this.allocated -= buffer.length;
+                this.#allocated -= buffer.length;
                 delete buffer._allocated;
                 this.#available.set();
                 return true;
@@ -83,6 +83,18 @@ class BufferPool {
         }
 
         return false;
+    }
+
+    get chunkSize() {
+        return this.#chunkSize;
+    }
+
+    get pageSize() {
+        return this.#pageSize;
+    }
+
+    get pageCount() {
+        return this.#pageCount;
     }
 
     get totalSize() {
