@@ -3,6 +3,8 @@ const Isolation = require('../isolation');
 const NetHelper = require('../../net/net-helper');
 const StringHelper = require('../../util/string-helper');
 const TypeHelper = require('../../util/type-helper');
+
+const iconv = require('iconv');
 const process = require('process');
 const path = require('path');
 const fs = require('fs');
@@ -71,10 +73,10 @@ class SystemConfig {
         (SystemConfig.#DEFAULT_PROCESSORS * 2): 4;
     
     #frontSocketSoRcvbuf = 1024 * 1024;
-	#frontSocketSoSndbuf = 4 * 1024 * 1024;
+	#frontSocketSoSndbuf = 4 * 1024 * 1024; // default 4M
     #frontSocketNoDelay = 1; // 0=false
     #frontWriteQueueSize = 2048;
-    #fakeMySQLVersion = '5.6';
+    #fakeMySQLVersion = '5.6.29';
 
     #backSocketSoSndbuf = 1024 * 1024;
 	#backSocketSoRcvbuf = 4 * 1024 * 1024; // mysql 5.6 net_buffer_length default 4M
@@ -181,9 +183,18 @@ class SystemConfig {
     #writeQueueRecoverThreshold = 512;
 
     #removeGraveAccent = 1;
+    #traceProtocol = 0;
 
     constructor() {
         
+    }
+
+    get clusterHeartbeatUser() {
+        return this.#clusterHeartbeatUser;
+    }
+
+    get clusterHeartbeatPass() {
+        return this.#clusterHeartbeatPass;
     }
 
     /** The frontend connection authentication timeout,  default 15s, unit second. 
@@ -206,7 +217,16 @@ class SystemConfig {
     }
 
     set charset(cs) {
-        this.#charset = StringHelper.ensureNotBlank(cs, 'charset');
+        let s = StringHelper.ensureNotBlank(cs, 'charset');
+        if (!iconv.isEncoding(cs)) {
+            throw new ConfigError(`charset '${cs}' not supported!`);
+        }
+        const CharsetHelper = require('../../util/charset-helper');
+        let i = CharsetHelper.index(s);
+        if (i === 0) {
+            throw new ConfigError(`charset '${cs}' not found!`);
+        }
+        this.#charset = s;
     }
 
     /** SQL parser, currently only 'myparser' supported. */
@@ -688,6 +708,19 @@ class SystemConfig {
         }
     }
 
+    get traceProtocol() {
+        return this.#traceProtocol;
+    }
+
+    set traceProtocol(trace) {
+        let n = TypeHelper.parseIntDecimal(trace, 'traceProtocol');
+        if (n === 0 || n === 1) {
+            this.#traceProtocol = n;
+        } else {
+            throw new ConfigError(`traceProtocol ${n} unknown: should be 0 or 1!`);
+        }
+    }
+
     /** Whether need password for login. 0 need, 1 not, and default 0. */
     get nonePasswordLogin() {
         return this.#nonePasswordLogin;
@@ -1110,7 +1143,7 @@ class SystemConfig {
         
         console.add({
             type: 'file',
-            levels: [level],
+            levels: applied(level),
             path: file,
             // Optional: 'day', 'hour', 'minute', '###k', '###m', '###g'，default '1m'
             split: split,
@@ -1142,6 +1175,15 @@ class SystemConfig {
                 default:
                     return console.INFO;
             }
+        }
+
+        function applied(level) {
+            let levels = [level];
+            let i = console.FATAL;
+            for (; i < level; ) {
+                levels.push(i++);
+            }
+            return levels;
         }
     }
 }

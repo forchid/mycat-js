@@ -1,3 +1,4 @@
+const Logger = require("../../util/logger");
 const LeastActiveLoadBalance = require("../load-balance/least-active-load-balance");
 const RandomLoadBalance = require("../load-balance/random-load-balance");
 const WeightedRrLoadBalance = require("../load-balance/weighted-rr-load-balance");
@@ -41,7 +42,7 @@ class PhysicalDbPool {
         this.#allSources = this.generateAllSources();
         this.#allSources.forEach(source => source.dbPool = this);
         let n = this.#allSources.length;
-        console.info(`Total data sources of the data host '%s' is %s.`, name, n);
+        Logger.info(`Total data sources of the data host '%s' is %s.`, name, n);
     }
 
     get hostName() {

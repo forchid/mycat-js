@@ -16,6 +16,7 @@ const ClusterConfig = require("../../model/cluster-config");
 const path = require('path');
 const fs = require('fs');
 const xml = require('xml');
+const Version = require("../../version");
 
 class XMLServerLoader {
 
@@ -85,6 +86,9 @@ class Parser {
             let props = XmlHelper.parsePropertyChildren(sysElem);
             ObjectHelper.fill(system, props);
         }
+
+        let fakeMv = system.fakeMySQLVersion;
+        if (fakeMv) Version.setMysqlVersion(fakeMv);
     }
 
     parseUsers(root) {

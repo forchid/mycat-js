@@ -1,5 +1,6 @@
 const SystemConfig = require('./config/model/system-config');
 const MycatServer = require('./mycat-server');
+const Logger = require('./util/logger');
 
 const process = require('process');
 const path = require('path');
@@ -10,21 +11,20 @@ class MycatStartup {
         try {
             const home = SystemConfig.homePath;
             if (!home) {
-                console.error("%s is not set.", SystemConfig.SYS_HOME);
+                Logger.error("%s is not set.", SystemConfig.SYS_HOME);
                 process.exit(-1);
             }
-        
+            
             const server = MycatServer.instance;
             server.startup();
             if (SystemConfig.logFileDisabled) {
-                console.log('MyCAT Server startup successfully. Logging file disabled.');
+                Logger.log('MyCAT Server startup successfully. Logging file disabled.');
             } else {
                 const logFile = path.resolve(home, "logs", "mycat.log");
-                console.log('MyCAT Server startup successfully. See logs in %s', logFile);
+                Logger.log(`MyCAT Server startup successfully. See logs in '%s'.`, logFile);
             }
         } catch (e) {
-            if (e.stack) console.error(`MyCAT Server startup error: \n${e.stack}`);
-            else console.error('MyCAT Server startup error: %s', e);
+            MycatServer.uncaught('MyCAT Server startup error', e);
             process.exit(-1);
         }
     }

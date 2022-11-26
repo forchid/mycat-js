@@ -2,6 +2,7 @@ const SystemConfig = require("../config/model/system-config");
 const ArgumentError = require("../lang/argument-error");
 const TypeHelper = require("../util/type-helper");
 const BufferError = require("./buffer-error");
+const Logger = require("../util/logger");
 
 const co = require("coroutine");
 
@@ -41,7 +42,7 @@ class BufferPool {
             let e = `pageSize * pageCount ${this.#totalSize} less than chunkSize ${chunkSize}!`;
             throw new ArgumentError(e);
         }
-        console.info(`Buffer pool total size ${this.#totalSize >> 20}M.`);
+        Logger.info(`Buffer pool total size ${this.#totalSize >> 20}M.`);
     }
 
     allocate(size, unsafe = true, await = false) {
@@ -70,6 +71,35 @@ class BufferPool {
         buffer._allocated = true;
 
         return buffer;
+    }
+
+    resize(buffer, size, await = false) {
+        TypeHelper.ensureInteger(size, 'size');
+        if (size < 0) throw new ArgumentError(`size(${size}) less than 0`);
+        if (!buffer._allocated) {
+            buffer.resize(size);
+            return;
+        }
+
+        let length = buffer.length;
+        if (length >= size) {
+            buffer.resize(size);
+            this.#allocated -= length - size;
+            this.#available.set();
+        } else {
+            let n = size + this.allocated;
+            while (n > this.totalSize) {
+                if (await) {
+                    this.#available.clear();
+                    this.#available.wait();
+                    n = size + this.allocated;
+                } else {
+                    throw new BufferError(`Can't resize buffer: size ${size}`);
+                }
+            }
+            buffer.resize(size);
+            this.#allocated += size - length;
+        }
     }
 
     release(buffer) {

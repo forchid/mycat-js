@@ -41,6 +41,39 @@ class StringHelper {
         else return jsPath.slice(0, i + 1) + s;
     }
 
+    static formatDate(d) {
+        let y = d.getFullYear();
+        let m = d.getMonth() + 1;
+        if (m < 10) m = '0' + m;
+        let a = d.getDate();
+        if (a < 10) a = '0' + a;
+        return `${y}-${m}-${a}`;
+    }
+
+    static formatTime(d) {
+        let h = d.getHours();
+        if (h < 10) h = '0' + h;
+        let m = d.getMinutes();
+        if (m < 10) m = '0' + m;
+        let s = d.getSeconds();
+        if (s < 10) s = '0' + s;
+        return `${h}-${m}-${s}`;
+    }
+
+    static formatDateTime(d) {
+        let a = StringHelper.formatDate(d);
+        let b = StringHelper.formatTime(d);
+        return a + ' ' + b;
+    }
+
+    static formatTimestamp(d) {
+        let a = StringHelper.formatDateTime(d);
+        let b = d.getMilliseconds();
+        if (b < 10) b = '00' + b;
+        else if (b < 100) b = '0' + b;
+        return a + '.' + b;
+    }
+
 }
 
 module.exports = StringHelper;
