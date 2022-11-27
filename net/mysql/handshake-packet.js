@@ -1,5 +1,4 @@
 const Version = require("../../config/version");
-const Logger = require("../../util/logger");
 const MysqlPacket = require("./mysql-packet");
 
 /**
@@ -90,11 +89,7 @@ class HandshakePacket extends MysqlPacket {
         p += rest.length;
         buffer.writeInt8(0, p++);
 
-        if (frontConn.traceProtocol) {
-            let hex = BufferHelper.dumpHex(buffer, 0, p);
-            Logger.info('S -> F: write %s -\r\n%s', this, hex);
-        }
-        frontConn.write(buffer, 0, p, flush);
+        frontConn.write(buffer, 0, p, flush, this);
     }
 
 }

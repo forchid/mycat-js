@@ -40,7 +40,7 @@
 		</property>
 
 		<!-- 1为开启mysql压缩协议 -->
-      	<property name="useCompression">0</property> 
+      	<property name="useCompression">0</property>
         <property name="idleTimeout">1800000</property>
 		<!-- 设置模拟的MySQL版本号 -->
         <!-- <property name="fakeMySQLVersion">5.6.20</property> -->

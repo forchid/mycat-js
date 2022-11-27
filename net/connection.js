@@ -145,8 +145,8 @@ class Connection {
             this.connManager = null;
         }
         if (reason) {
-            let s = `Close connection '${this}' by reason '${reason}'`;
-            Logger.info(s);
+            let f = `Close the connection '%s' by reason '%s'.`;
+            Logger.debug(f, this, reason);
         }
         this.#closed = true;
         return true;

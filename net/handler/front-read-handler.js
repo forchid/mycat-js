@@ -15,15 +15,24 @@ class FrontReadHandler extends Handler {
     }
 
     invoke (source) {
+        let packets = [];
+        let i = 0;
+
         while (!source.closed) {
-            let p = readPacket(source);
+            // Multi-packets when compress enabled
+            if (i >= packets.length) {
+                packets = readPackets(source);
+                i = 0;
+            }
+            let p = packets[i];
+            packets[i++] = null;
             super.invoke(p);
         }
     }
 
 }
 
-function readPacket(source) {
+function readPackets(source) {
     let headerSize = source.packetHeaderSize;
     let supportCompress = source.supportCompress;
     if (supportCompress) headerSize = 7; // +3 len of un-comp length field
@@ -74,12 +83,18 @@ function readPacket(source) {
         Logger.info('F -> S: read packet -\r\n%s', hex);
     }
     if (supportCompress) {
-        buffer = CompressHelper.decompressMysqlPacket(buffer, length);
+        let buffers = CompressHelper.decompressMysqlPacket(buffer, length);
+        let packets = [];
         headerSize = 4;
-        length = buffer.length;
+        for (let buffer of buffers) {
+            length = buffer.length;
+            let packet = new FrontPacket(source, buffer, length, headerSize);
+            packets.push(packet);
+        }
+        return packets;
+    } else {
+        return [new FrontPacket(source, buffer, length, headerSize)];
     }
-
-    return new FrontPacket(source, buffer, length, headerSize);
 }
 
 module.exports = FrontReadHandler;

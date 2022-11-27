@@ -1,6 +1,6 @@
 const MycatPrivileges = require("../config/mycat-privileges");
 const MycatServer = require("../mycat-server");
-const FrontAuthHandler = require("../net/factory/front-auth-handler");
+const FrontAuthHandler = require("../net/handler/front-auth-handler");
 const FrontConnFactory = require("../net/factory/front-conn-factory");
 const FrontReadHandler = require("../net/handler/front-read-handler");
 const CoHelper = require("../util/co-helper");

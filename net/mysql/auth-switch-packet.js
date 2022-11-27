@@ -1,5 +1,4 @@
 const BufferHelper = require("../../buffer/buffer-helper");
-const Logger = require("../../util/logger");
 const MysqlMessage = require("./mysql-message");
 const MysqlPacket = require("./mysql-packet");
 
@@ -42,11 +41,7 @@ class AuthSwitchPacket extends MysqlPacket {
         buffer.set(this.authData, p);
         p += this.authData.length;
 
-        if (frontConn.traceProtocol) {
-            let hex = BufferHelper.dumpHex(buffer, 0, p);
-            Logger.info('S -> F: write %s -\r\n%s', this, hex);
-        }
-        frontConn.send(buffer, 0, p);
+        frontConn.send(buffer, 0, p, this);
     }
 
     calcPayloadLength() {

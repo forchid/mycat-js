@@ -7,6 +7,7 @@ function run() {
     require('./config/loader/xml/xml-schema-loader-test')();
     require('./config/loader/xml/xml-server-loader-test')();
     require('./handler/handler-test')();
+    require('./util/compress-helper-test')();
     require('./util/io-helper-test')();
     require('./util/mysql-password-test')();
     require('./util/scheduler-test')();

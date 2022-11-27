@@ -1,6 +1,5 @@
 const BufferHelper = require("../../buffer/buffer-helper");
 const Capabilities = require("../../config/capabilities");
-const Logger = require("../../util/logger");
 const MysqlPacket = require("./mysql-packet");
 
 /**
@@ -86,11 +85,7 @@ class ErrorPacket extends MysqlPacket {
             p += n;
         }
 
-        if (frontConn.traceProtocol) {
-            let hex = BufferHelper.dumpHex(buffer, 0, p);
-            Logger.info('S -> F: write %s -\r\n%s', this, hex);
-        }
-        frontConn.write(buffer, 0, p, flush);
+        frontConn.write(buffer, 0, p, flush, this);
     }
 
 }

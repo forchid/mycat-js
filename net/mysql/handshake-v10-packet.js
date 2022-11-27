@@ -1,7 +1,6 @@
 const BufferHelper = require("../../buffer/buffer-helper");
 const Capabilities = require("../../config/capabilities");
 const Version = require("../../config/version");
-const Logger = require("../../util/logger");
 const MysqlPacket = require("./mysql-packet");
 
 /**
@@ -146,11 +145,7 @@ class HandshakeV10Packet extends MysqlPacket {
             buffer.writeInt8(0, p++);
         }
 
-        if (frontConn.traceProtocol) {
-            let hex = BufferHelper.dumpHex(buffer, 0, p);
-            Logger.info('S -> F: write %s -\r\n%s', this, hex);
-        }
-        frontConn.write(buffer, 0, p, flush);
+        frontConn.write(buffer, 0, p, flush, this);
     }
 
     static get DEFAULT_AUTH_PLUGIN_NAME() {

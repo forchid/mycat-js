@@ -117,16 +117,13 @@ function success(source, packet, authOk) {
     let system = MycatServer.instance.system;
     source.idleTimeout = system.idleTimeout;
     
-    let clientCompress = packet.clientFlags & Capabilities.CLIENT_COMPRESS;
-    let serverCompress = system.useCompression;
+    let clientCompress = !!(packet.clientFlags & Capabilities.CLIENT_COMPRESS);
+    let serverCompress = !!system.useCompression;
     source.supportCompress = clientCompress && serverCompress;
-    Logger.debug(`%s: the user '%s'@'%s' login success.`, source, user, source.host);
-
-    if (source.traceProtocol) {
-        let hex = BufferHelper.dumpHex(authOk);
-        Logger.info('S -> F: write MySQL Ok Packet -\r\n%s', hex);
-    }
-    source.send(authOk);
+    Logger.debug(`%s: the user '%s'@'%s' login success(client compress %s and server %s).`, 
+        source, user, source.host, clientCompress, serverCompress);
+    
+    source.send(authOk, 'MySQL Ok Packet');
 }
 
 function failure(source, seq, errno, message, sqlState) {

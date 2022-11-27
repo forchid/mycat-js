@@ -7,6 +7,9 @@ const Capabilities = require("../config/capabilities");
 const HandshakePacket = require("./mysql/handshake-packet");
 const ErrorPacket = require("./mysql/error-packet");
 const NetError = require("./net-error");
+const CompressHelper = require("../util/compress-helper");
+const Logger = require("../util/logger");
+const BufferHelper = require("../buffer/buffer-helper");
 
 const net = require('net');
 const crypto = require('crypto');
@@ -138,11 +141,15 @@ class FrontConnection extends Connection {
         error.write(this.writeBuffer, this, true);
     }
 
-    send(buffer, start = 0, end = -1) {
-        this.write(buffer, start, end, true);
+    send(buffer, start = 0, end = -1, msg) {
+        if (start.constructor !== Number) {
+            msg = start;
+            start = 0;
+        }
+        this.write(buffer, start, end, true, msg);
     }
 
-    write(buffer, start = 0, end = -1, flush = false) {
+    write(buffer, start = 0, end = -1, flush = false, msg = 'Packet') {
         let socket = this.socket;
         if (start === true) {
             flush = true;
@@ -155,6 +162,13 @@ class FrontConnection extends Connection {
         } else {
             if (end === -1) end = buffer.length;
             buf = buffer.slice(start, end);
+        }
+        if (this.supportCompress) {
+            buf = CompressHelper.compressMysqlPacket(buf);
+        }
+        if (this.traceProtocol) {
+            let hex = BufferHelper.dumpHex(buf);
+            Logger.info('S -> F: write %s -\r\n%s', msg, hex);
         }
         try {
             socket.write(buf);
