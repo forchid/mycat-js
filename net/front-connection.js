@@ -88,7 +88,9 @@ class FrontConnection extends Connection {
 
     set connManager(manager) {
         super.connManager = manager;
-        manager.addFrontend(this);
+        if (manager !== null) {
+            manager.addFrontend(this);
+        }
     }
 
     get traceProtocol() { return this.#traceProtocol; }
@@ -180,7 +182,7 @@ class FrontConnection extends Connection {
 
     close(reason) {
         this.socket.close();
-        super.close(reason);
+        return super.close(reason);
     }
     
 }

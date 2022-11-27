@@ -117,10 +117,9 @@ class Connection {
     get connManager() { return this.#connManager; }
 
     set connManager(manager) {
-        if (!this.connManager) {
-            this.#connManager = manager;
-            this.#writeBuffer = this.allocate();
-        }
+        let old = this.connManager;
+        this.#connManager = manager;
+        if (!old) this.#writeBuffer = this.allocate();
     }
 
     allocate() {
@@ -134,17 +133,23 @@ class Connection {
     }
 
     close(reason) {
+        if (this.closed) {
+            return false;
+        }
+
         let cm = this.connManager;
         if (cm) {
             cm.releaseBuffer(this.writeBuffer);
             this.#writeBuffer = null;
             cm.removeConnection(this);
+            this.connManager = null;
         }
         if (reason) {
             let s = `Close connection '${this}' by reason '${reason}'`;
             Logger.info(s);
         }
         this.#closed = true;
+        return true;
     }
 
     toString() {

@@ -40,7 +40,8 @@
 		</property>
 
 		<!-- 1为开启mysql压缩协议 -->
-      	<property name="useCompression">1</property> 
+      	<property name="useCompression">0</property> 
+        <property name="idleTimeout">1800000</property>
 		<!-- 设置模拟的MySQL版本号 -->
         <!-- <property name="fakeMySQLVersion">5.6.20</property> -->
 		<!-- <property name="processorBufferChunk">40960</property> -->
@@ -60,7 +61,6 @@
 		<!--
 			<property name="serverPort">8066</property>
 			<property name="managerPort">9066</property>
-			<property name="idleTimeout">300000</property>
 			<property name="authTimeout">15000</property>
 			<property name="bindIp">0.0.0.0</property>
 			<property name="dataNodeIdleCheckPeriod">300000</property> 
