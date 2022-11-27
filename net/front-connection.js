@@ -39,6 +39,10 @@ class FrontConnection extends Connection {
         this.#handler = handler;
     }
 
+    get handler() {
+        return this.#handler;
+    }
+
     get user() {
         return this.#user;
     }

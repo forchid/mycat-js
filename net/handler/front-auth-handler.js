@@ -102,6 +102,7 @@ class FrontAuthHandler extends Handler {
             let ok = this.#authOk;
             ok[3] = this.#seq + 1;
             success(source, this.#packet, ok);
+            source.handler.remove(this);
         }
     }
 

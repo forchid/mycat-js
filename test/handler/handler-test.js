@@ -70,6 +70,153 @@ function run() {
             v = h.invoke({ op: '*', val: 10 });
             assert.equal(100, v);
         });
+
+        it ('remove()', () => {
+            let h = new Handler(inc);
+            let ok = h.remove(inc);
+            assert.ok(ok);
+            let res = h.invoke(1);
+            assert.equal(undefined, res);
+
+            ok = h.remove(inc);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(undefined, res);
+
+            h = new Handler([inc, mul]);
+            ok = h.remove(mul);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+            ok = h.remove(mul);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.remove(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(undefined, res);
+            ok = h.remove(inc);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(undefined, res);
+
+            h = new Handler({ inc, mul});
+            ok = h.remove(mul);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.remove(mul);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.remove(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(undefined, res);
+            ok = h.remove(inc);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(undefined, res);
+        });
+
+        it ('add()', () => {
+            let h = new Handler([inc]);
+            let ok = h.add(mul);
+            assert.ok(ok);
+            let res = h.invoke(1);
+            assert.equal(4, res);
+
+            ok = h.remove(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(1, res);
+
+            ok = h.add(1, inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.remove(mul);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.add(0, inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(3, res);
+
+            h = new Handler({ inc });
+            ok = h.add('inc', inc);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.add(inc);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.add('mul', mul);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(4, res);
+
+            ok = h.add('mul', mul);
+            assert.ok(!ok);
+            res = h.invoke(1);
+            assert.equal(4, res);
+
+            ok = h.remove(mul);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.add('mul', mul);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(4, res);
+        });
+
+        it ('append()', () => {
+            let h = new Handler([inc]);
+            let ok = h.append(mul);
+            assert.ok(ok);
+            let res = h.invoke(1);
+            assert.equal(4, res);
+
+            ok = h.remove(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(1, res);
+
+            ok = h.append(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(2, res);
+        });
+
+        it ('prepend()', () => {
+            let h = new Handler([inc]);
+            let ok = h.prepend(mul);
+            assert.ok(ok);
+            let res = h.invoke(1);
+            assert.equal(2, res);
+
+            ok = h.remove(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(1, res);
+
+            ok = h.prepend(inc);
+            assert.ok(ok);
+            res = h.invoke(1);
+            assert.equal(4, res);
+        });
     });
 }
 

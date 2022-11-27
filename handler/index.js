@@ -41,6 +41,74 @@ class Handler {
         }
     }
 
+    prepend(handler) {
+        return this.add(0, handler);
+    }
+
+    append(handler) {
+        return this.add(handler);
+    }
+
+    add(key, handler) {
+        let handlers = this.#handlers;
+        if (handlers instanceof Array) {
+            if (handler === undefined) {
+                if (key instanceof Handler ||
+                    key instanceof Function) {
+                    handlers.push(key);
+                    return true;
+                }
+            } else if (key.constructor === Number) {
+                if (key === handlers.length) 
+                    handlers.push(handler);
+                else 
+                    handlers.splice(key, 0, handler);
+                return true;
+            }
+        } else if (handlers instanceof Object) {
+            if (typeof key === 'string' && handler) {
+                let old = handlers[key];
+                if (!old) {
+                    handlers[key] = handler;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    remove(handler) {
+        let handlers = this.#handlers;
+        if (handlers === handler) {
+            this.#handlers = null;
+            return true;
+        } else if (handlers instanceof Array) {
+            let i = 0;
+            for (let h of handlers) {
+                if (h === handler) break;
+                ++i;
+            }
+            if (i < handlers.length) {
+                handlers.splice(i, 1);
+                return true;
+            }
+        } else if (handlers instanceof Object) {
+            let k;
+            for (let p in handlers) {
+                let h = handlers[k = p];
+                if (h === handler) break;
+                k = null;
+            }
+            if (k) {
+                delete handlers[k];
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** Handle the message.
      * 
      * @param message the message
