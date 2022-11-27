@@ -27,7 +27,7 @@ class MysqlMessage {
 
     get hasRemaining() { return this.position < this.length; }
 
-    skip(i) { this.#position += i; }
+    skip(i = 1) { this.#position += i; }
 
     skipTo(i) { this.#position = i; }
 

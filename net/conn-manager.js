@@ -17,6 +17,9 @@ class ConnManager {
     #frontends = new Map();
     #backends = new Map();
 
+    #inBytes = 0;
+	#outBytes = 0;
+
     constructor (bufferPool, name = 'ConnManager') {
         TypeHelper.ensureInstanceof(bufferPool, BufferPool, 'bufferPool');
         this.#bufferPool = bufferPool;
@@ -40,6 +43,25 @@ class ConnManager {
     get backends() {
         return this.#backends;
     }
+
+    get inBytes() {
+        return this.#inBytes;
+    }
+
+    addInBytes(n) {
+        this.#inBytes += n;
+        return this;
+    }
+
+    get outBytes() {
+        return this.#outBytes;
+    }
+
+    addOutBytes(n) {
+        this.#outBytes += n;
+        return this;
+    }
+
 
     addFrontend(conn) {
         TypeHelper.ensureInstanceof(conn, FrontConnection, 'conn');

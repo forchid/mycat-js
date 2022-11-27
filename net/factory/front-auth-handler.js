@@ -5,7 +5,9 @@ const MycatServer = require("../../mycat-server");
 const Logger = require("../../util/logger");
 const MysqlPassword = require("../../util/mysql-password");
 const AuthPacket = require("../mysql/auth-packet");
+const AuthSwitchPacket = require("../mysql/auth-switch-packet");
 const ErrorCode = require("../mysql/error-code");
+const ErrorPacket = require("../mysql/error-packet");
 const HandshakeV10Packet = require("../mysql/handshake-v10-packet");
 const MysqlPacket = require("../mysql/mysql-packet");
 const QuitPacket = require("../mysql/quit-packet");
@@ -31,7 +33,12 @@ class FrontAuthHandler extends Handler {
             return;
         }
 
-        if (!this.#packet) {
+        if (this.#packet) {
+            let authSwitch = new AuthSwitchPacket();
+            authSwitch.read(buffer.slice(0, length));
+            this.#packet.password = authSwitch.authData;
+            this.#seq = authSwitch.sequenceId + 1;
+        } else {
             let ap = new AuthPacket();
             let res = ap.read(buffer, source, length);
             if (!res.ok) {
@@ -44,7 +51,9 @@ class FrontAuthHandler extends Handler {
             let plugin = ap.clientAuthPlugin;
             let def = HandshakeV10Packet.DEFAULT_AUTH_PLUGIN_NAME;
             if (plugin && def.compare(plugin) !== 0) {
-                // TODO AuthSwitchPacket
+                let authSwitch = new AuthSwitchPacket(def, source.seed);
+                authSwitch.sequenceId = this.#seq + 1;
+                authSwitch.write(source.writeBuffer, source);
                 return;
             }
         }
@@ -65,7 +74,7 @@ class FrontAuthHandler extends Handler {
         let host = source.host;
         if (!privileges.userExists(user, host)) {
             failure(source, this.#seq + 1, ErrorCode.ER_ACCESS_DENIED_ERROR, 
-                `Access denied for user \`${user}\`@${host}`);
+                `Access denied for user '${user}'@'${host}'`);
             return;
         }
 
@@ -73,21 +82,26 @@ class FrontAuthHandler extends Handler {
         if (!passwordLess && !checkPassword(source, password, user)) {
             let wp = password && password.length > 0;
             failure(source, this.#seq + 1, ErrorCode.ER_ACCESS_DENIED_ERROR, 
-                `Access denied for user \`${user}\`@${host} ${wp?'with':'without'} password`);
+                `Access denied for user '${user}'@'${host}' (using password: ${wp?'YES':'NO'})`,
+                '28000');
             return;
         }
 
         if (connsLimited(source, user)) {
             failure(source, this.#seq + 1, ErrorCode.ER_ACCESS_DENIED_ERROR, 
-                `Access denied for user \`${user}\`@${host} because of connections limited`);
+                `Access denied for user '${user}'@'${host}' because of connections limited`);
             return;
         }
 
         let schema = this.#packet.database;
         if (checkSchema(source, schema, user, (errno, message) => {
-            failure(source, this.#seq + 1, errno, message);
+            let sqlState = ErrorPacket.DEFAULT_SQL_STATE;
+            if (errno === ErrorCode.ER_BAD_DB_ERROR) sqlState = '42000';
+            failure(source, this.#seq + 1, errno, message, sqlState);
         })) {
-            success(source, this.#packet, this.#authOk);
+            let ok = this.#authOk;
+            ok[3] = this.#seq + 1;
+            success(source, this.#packet, ok);
         }
     }
 
@@ -99,11 +113,14 @@ function success(source, packet, authOk) {
     source.user = user;
     source.schema = packet.database;
     source.charsetIndex = packet.charsetIndex;
+
+    let system = MycatServer.instance.system;
+    source.idleTimeout = system.idleTimeout;
     
     let clientCompress = packet.clientFlags & Capabilities.CLIENT_COMPRESS;
-    let serverCompress = MycatServer.instance.config.system.useCompression;
+    let serverCompress = system.useCompression;
     source.supportCompress = clientCompress && serverCompress;
-    Logger.debug('%s: the user `%s`@%s login success.', source, user, source.host);
+    Logger.debug(`%s: the user '%s'@'%s' login success.`, source, user, source.host);
 
     if (source.traceProtocol) {
         let hex = BufferHelper.dumpHex(authOk);
@@ -112,9 +129,9 @@ function success(source, packet, authOk) {
     source.send(authOk);
 }
 
-function failure(source, seq, errno, message) {
+function failure(source, seq, errno, message, sqlState) {
     Logger.warn('%s: %s', source, message);
-    source.sendError(seq, errno, message);
+    source.sendError(seq, errno, message, sqlState);
     source.close(message);
 }
 
@@ -130,7 +147,7 @@ function checkSchema(source, schema, user, errCb) {
         if (schemas.has(schema)) {
             return true;
         } else {
-            let m = `Access denied for user \`${user}\` to database '${schema}'`;
+            let m = `Access denied for user '${user}' to database '${schema}'`;
             errCb(ErrorCode.ER_DBACCESS_DENIED_ERRORR, m);
             return false;
         }

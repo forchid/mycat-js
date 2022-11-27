@@ -40,7 +40,7 @@
 		</property>
 
 		<!-- 1为开启mysql压缩协议 -->
-      	<!-- <property name="useCompression">1</property> -->
+      	<property name="useCompression">1</property> 
 		<!-- 设置模拟的MySQL版本号 -->
         <!-- <property name="fakeMySQLVersion">5.6.20</property> -->
 		<!-- <property name="processorBufferChunk">40960</property> -->

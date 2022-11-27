@@ -61,7 +61,7 @@ class MycatPrivileges {
         }
 
         if (!passed && warnIfAbsent) {
-            Logger.warn(`The user \`%s\`@%s try to attack the server!`, user, host);
+            Logger.warn(`The user '%s'@'%s' try to attack the server!`, user, host);
         }
         return passed;
     }

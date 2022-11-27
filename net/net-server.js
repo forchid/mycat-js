@@ -6,6 +6,7 @@ const MycatServer = require('../mycat-server');
 
 const net = require('net');
 const co = require('coroutine');
+const NetError = require('./net-error');
 
 /**
  * A network server based on socket and coroutine.
@@ -124,8 +125,10 @@ class ServerHelper {
                     conn = factory.make(sock);
                     conn.start();
                 } catch (e) {
-                    if (conn) conn.close();
-                    MycatServer.uncaught(e);
+                    if (conn) conn.close(e);
+                    if (e.constructor !== NetError) {
+                        MycatServer.uncaught(e);
+                    }
                 } finally {
                     sock.close();
                 }

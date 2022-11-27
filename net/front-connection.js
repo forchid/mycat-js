@@ -5,10 +5,11 @@ const MycatServer = require("../mycat-server");
 const HandshakeV10Packet = require("./mysql/handshake-v10-packet");
 const Capabilities = require("../config/capabilities");
 const HandshakePacket = require("./mysql/handshake-packet");
+const ErrorPacket = require("./mysql/error-packet");
+const NetError = require("./net-error");
 
 const net = require('net');
 const crypto = require('crypto');
-const ErrorPacket = require("./mysql/error-packet");
 
 class FrontConnection extends Connection {
 
@@ -81,6 +82,10 @@ class FrontConnection extends Connection {
         this.socket.timeout = timeout;
     }
 
+    get connManager() {
+        return super.connManager;
+    }
+
     set connManager(manager) {
         super.connManager = manager;
         manager.addFrontend(this);
@@ -102,6 +107,16 @@ class FrontConnection extends Connection {
         this.#privileges = privileges;
     }
 
+    get idleTimeout() {
+        return super.idleTimeout;
+    }
+
+    set idleTimeout(timeout) {
+        super.idleTimeout = timeout;
+        if (timeout <= 0) timeout = 0;
+        this.socket.timeout = timeout;
+    }
+
     /**
      * Start the connection handle.
      */
@@ -109,7 +124,6 @@ class FrontConnection extends Connection {
         if (this.closed) return;
         this.#seed = initHandshake(this);
         this.handler.invoke(this);
-        this.close();
     }
 
     sendError(seq, errno, message, sqlState = ErrorPacket.DEFAULT_SQL_STATE) {
@@ -130,21 +144,38 @@ class FrontConnection extends Connection {
         let socket = this.socket;
         if (start === true) {
             flush = true;
-        } else {
-            let buf;
-            if (start === 0 && (end===-1 || end===buffer.length)) {
-                buf = buffer;
-            } else {
-                if (end === -1) end = buffer.length;
-                buf = buffer.slice(start, end);
-            }
-            socket.write(buf);
+            start = 0;
         }
-        if (flush) socket.flush();
+
+        let buf;
+        if (start === 0 && (end===-1 || end===buffer.length)) {
+            buf = buffer;
+        } else {
+            if (end === -1) end = buffer.length;
+            buf = buffer.slice(start, end);
+        }
+        try {
+            socket.write(buf);
+        } catch (e) {
+            throw new NetError(`${this} write failed - ${e}`);
+        }
+        super.connManager.addOutBytes(buf.length);
+
+        if (flush) {
+            try {
+                socket.flush();
+            } catch (e) {
+                throw new NetError(`${this} flush failed - ${e}`);
+            }
+        }
     }
 
     flush() {
-        this.socket.flush();
+        try {
+            this.socket.flush();
+        } catch (e) {
+            throw new NetError(`${this} flush failed - ${e}`);
+        }
     }
 
     close(reason) {
@@ -180,11 +211,24 @@ function initHandshake(conn) {
 }
 
 /** Now mysql-connector-j(.. v5.1.35+ .., v8.0.27 ..) had handled 
- * seed with `ASCII` charset, so the seed should be modded by 0x80.
+ * seed with `ASCII` charset string, so the seed should be modded 
+ * by 0x80 and can't contain 0 char.
  * Note that mariadb connector-j, mysql client works with `latin1`.
  */
 function asciiSeed(seed) {
-    seed.forEach((b, i) => seed[i] = b % 0x80);
+    let r = 0;
+    seed.forEach((b, i) => {
+        b %= 0x80;
+        while (!b) {
+            if (r) {
+                b = r;
+                break;
+            }
+            r = crypto.randomBytes(1);
+            b = r = r[0] % 0x80;
+        }
+        seed[i] = b;
+    });
     return seed;
 }
 

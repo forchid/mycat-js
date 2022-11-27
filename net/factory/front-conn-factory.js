@@ -30,7 +30,6 @@ class FrontConnFactory {
         
         conn.maxPacketSize = system.maxPacketSize;
         conn.packetHeaderSize = system.packetHeaderSize;
-        conn.idleTimeout = system.idleTimeout;
         conn.charset = system.charset;
         conn.traceProtocol = system.traceProtocol;
 
