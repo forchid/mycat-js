@@ -33,6 +33,10 @@ class Connection {
         this.#id = id;
     }
 
+    get cmdCounter() {
+        return this.connManager.cmdCounter;
+    }
+
     get id() { return this.#id; }
 
     get closed() { return this.#closed; }
@@ -144,8 +148,10 @@ class Connection {
             cm.removeConnection(this);
             this.connManager = null;
         }
-        if (reason) {
-            let f = `Close the connection '%s' by reason '%s'.`;
+        if (reason && Logger.debugEnabled) {
+            let f = "Close the connection '%s' by reason '%s'.";
+            if (reason.constructor === Buffer)
+                reason = reason.toString(this.charset);
             Logger.debug(f, this, reason);
         }
         this.#closed = true;

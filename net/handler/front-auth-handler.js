@@ -1,4 +1,3 @@
-const BufferHelper = require("../../buffer/buffer-helper");
 const Capabilities = require("../../config/capabilities");
 const Handler = require("../../handler");
 const MycatServer = require("../../mycat-server");
@@ -7,7 +6,6 @@ const MysqlPassword = require("../../util/mysql-password");
 const AuthPacket = require("../mysql/auth-packet");
 const AuthSwitchPacket = require("../mysql/auth-switch-packet");
 const ErrorCode = require("../mysql/error-code");
-const ErrorPacket = require("../mysql/error-packet");
 const HandshakeV10Packet = require("../mysql/handshake-v10-packet");
 const MysqlPacket = require("../mysql/mysql-packet");
 const QuitPacket = require("../mysql/quit-packet");
@@ -72,32 +70,28 @@ class FrontAuthHandler extends Handler {
         let privileges = source.privileges;
         let user = this.#packet.user;
         let host = source.host;
-        if (!privileges.userExists(user, host)) {
-            failure(source, this.#seq + 1, ErrorCode.ER_ACCESS_DENIED_ERROR, 
-                `Access denied for user '${user}'@'${host}'`);
-            return;
-        }
-
         let password = this.#packet.password;
-        if (!passwordLess && !checkPassword(source, password, user)) {
-            let wp = password && password.length > 0;
-            failure(source, this.#seq + 1, ErrorCode.ER_ACCESS_DENIED_ERROR, 
-                `Access denied for user '${user}'@'${host}' (using password: ${wp?'YES':'NO'})`,
-                '28000');
+
+        if ((!privileges.userExists(user, host)) || 
+            (!passwordLess && !checkPassword(source, password, user))) {
+            let er = ErrorCode.ER_ACCESS_DENIED_ERROR;
+            let wp = usingPassword(password);
+            failure(source, this.#seq + 1, er, user, host, wp);
             return;
         }
 
         if (connsLimited(source, user)) {
-            failure(source, this.#seq + 1, ErrorCode.ER_ACCESS_DENIED_ERROR, 
-                `Access denied for user '${user}'@'${host}' because of connections limited`);
+            failure(source, this.#seq + 1, ErrorCode.ER_CON_COUNT_ERROR);
             return;
         }
 
         let schema = this.#packet.database;
-        if (checkSchema(source, schema, user, (errno, message) => {
-            let sqlState = ErrorPacket.DEFAULT_SQL_STATE;
-            if (errno === ErrorCode.ER_BAD_DB_ERROR) sqlState = '42000';
-            failure(source, this.#seq + 1, errno, message, sqlState);
+        if (checkSchema(source, schema, user, errno => {
+            if (errno === ErrorCode.ER_BAD_DB_ERROR) {
+                failure(source, this.#seq + 1, errno, schema);
+            } else {
+                failure(source, this.#seq + 1, errno, user, host, schema);
+            }
         })) {
             let ok = this.#authOk;
             ok[3] = this.#seq + 1;
@@ -111,6 +105,7 @@ class FrontAuthHandler extends Handler {
 function success(source, packet, authOk) {
     let user = packet.user;
     source.authenticated = true;
+    source.seed = null;
     source.user = user;
     source.schema = packet.database;
     source.charsetIndex = packet.charsetIndex;
@@ -127,10 +122,20 @@ function success(source, packet, authOk) {
     source.send(authOk, 'MySQL Ok Packet');
 }
 
-function failure(source, seq, errno, message, sqlState) {
-    Logger.warn('%s: %s', source, message);
-    source.sendError(seq, errno, message, sqlState);
-    source.close(message);
+function usingPassword(password) {
+    return (password && password.length > 0? "YES": "NO");
+}
+
+function failure(source, seq, errno) {
+    let args = arguments;
+    let packet;
+    if (args.length > 3) {
+        args = Array.prototype.slice.call(args, 3);
+        packet = source.sendError(seq, errno, args);
+    } else {
+        packet = source.sendError(seq, errno);
+    }
+    source.close(packet.message);
 }
 
 function checkSchema(source, schema, user, errCb) {
@@ -140,17 +145,17 @@ function checkSchema(source, schema, user, errCb) {
     }
 
     let privileges = source.privileges;
+    schema = schema.toUpperCase();
     if (privileges.schemaExists(schema)) {
         let schemas = privileges.getUserSchemas(user);
         if (schemas.has(schema)) {
             return true;
         } else {
-            let m = `Access denied for user '${user}' to database '${schema}'`;
-            errCb(ErrorCode.ER_DBACCESS_DENIED_ERRORR, m);
+            errCb(ErrorCode.ER_DBACCESS_DENIED_ERRORR);
             return false;
         }
     } else {
-        errCb(ErrorCode.ER_BAD_DB_ERROR, `Unknown database '${schema}'`);
+        errCb(ErrorCode.ER_BAD_DB_ERROR);
         return false;
     }
 }

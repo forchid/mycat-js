@@ -5,13 +5,14 @@ const FrontConnFactory = require("../net/factory/front-conn-factory");
 const FrontReadHandler = require("../net/handler/front-read-handler");
 const CoHelper = require("../util/co-helper");
 const ServerConnection = require("./server-connection");
+const FrontCmdHandler = require("../net/handler/front-cmd-handler");
 
 class ServerConnFactory extends FrontConnFactory {
 
     create(socket) {
         // Server handler chain:
-        // >readPacket, auth, command, prepare, query, loadDataInFile
-        let handlers = [new FrontAuthHandler()];
+        // >read, auth, command, prepare, query, loadDataInFile
+        let handlers = [new FrontAuthHandler(), new FrontCmdHandler()];
         let handler = new FrontReadHandler(handlers);
         
         let id = super.nextId;

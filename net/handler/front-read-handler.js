@@ -26,6 +26,7 @@ class FrontReadHandler extends Handler {
             }
             let p = packets[i];
             packets[i++] = null;
+            if (source.closed) break;
             super.invoke(p);
         }
     }
@@ -85,15 +86,14 @@ function readPackets(source) {
     if (supportCompress) {
         let buffers = CompressHelper.decompressMysqlPacket(buffer, length);
         let packets = [];
-        headerSize = 4;
         for (let buffer of buffers) {
             length = buffer.length;
-            let packet = new FrontPacket(source, buffer, length, headerSize);
+            let packet = new FrontPacket(source, buffer, length);
             packets.push(packet);
         }
         return packets;
     } else {
-        return [new FrontPacket(source, buffer, length, headerSize)];
+        return [new FrontPacket(source, buffer, length)];
     }
 }
 

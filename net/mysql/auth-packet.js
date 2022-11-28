@@ -61,14 +61,13 @@ class AuthPacket extends MysqlPacket {
         if (this.clientFlags & Capabilities.CLIENT_CONNECT_WITH_DB) {
             let charset = CharsetHelper.charset(this.charsetIndex);
             if (!iconv.isEncoding(charset)) {
-                let message = `Unknown charset '${charset}'`;
                 let errno = ErrorCode.ER_UNKNOWN_CHARACTER_SET;
-                source.sendError(2, errno, message);
+                source.sendError(2, errno, charset);
                 return { ok: false, msg: message };
             }
             if (m.hasRemaining) {
                 let db = m.readStringWithNull(charset);
-                this.database = db? db.toUpperCase(): '';
+                this.database = db || '';
             }
         }
         if (this.clientFlags & Capabilities.CLIENT_PLUGIN_AUTH) {

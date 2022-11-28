@@ -258,6 +258,62 @@ class MysqlMessage {
         }
     }
 
+    static writeLengthEncodedInt(buffer, n, p = 0) {
+        let len = this.lengthEncodedOf(n);
+
+        if (n.constructor === Buffer) {
+            n = n.length;
+        }
+        switch (len) {
+            case 1:
+                buffer.writeUInt8(n, p);
+                break;
+            case 3:
+                buffer.writeUInt8(0xfc, p++);
+                buffer.writeUInt16(n, p);
+                break;
+            case 4:
+                buffer.writeUInt8(0xfd, p++);
+                BufferHelper.writeUInt24LE(buffer, n, p);
+                break;
+            case 9:
+                buffer.writeUInt8(0xfe, p++);
+                buffer.writeInt64(n, p);
+                break;
+            default:
+                throw new Error(`Unknown length-encoded ${len}`);
+        }
+
+        return len;
+    }
+
+    static lengthEncodedOf(n) {
+        let c = n.constructor;
+        if (c === Number) {
+            if(n < 0){
+                return 9;
+            } else if (n < 0xfb) {
+                return 1;
+            } else if (n < 0x10000) {
+                return 3;
+            } else if (n < 0x1000000) {
+                return 4;
+            } else {
+                return 9;
+            }
+        } else if (c === Buffer) {
+            return this.lengthEncodedOf(n.length);
+        } else {
+            throw new TypeError("The arg n type unsupported");
+        }
+    }
+
+    static writeBytesWithLength(out, inp, p) {
+        p += this.writeLengthEncodedInt(out, inp, p);
+        p += out.set(inp, p);
+        return p;
+    }
+
 }
 
 module.exports = MysqlMessage;

@@ -10,9 +10,11 @@ const NetError = require("./net-error");
 const CompressHelper = require("../util/compress-helper");
 const Logger = require("../util/logger");
 const BufferHelper = require("../buffer/buffer-helper");
+const ErrorCode = require("./mysql/error-code");
 
 const net = require('net');
 const crypto = require('crypto');
+const OkPacket = require("./mysql/ok-packet");
 
 class FrontConnection extends Connection {
 
@@ -23,10 +25,12 @@ class FrontConnection extends Connection {
 
     #privileges = null;
     #capabilities = 0;
+    #seed = null;
     #authenticated = false;
     #user = '';
 	#schema = '';
-    #seed = null;
+    
+    #loadDataStarted = false;
 
     constructor (id, socket, handler) {
         super(id);
@@ -37,6 +41,14 @@ class FrontConnection extends Connection {
         super.localPort = socket.localPort;
         this.#socket = socket;
         this.#handler = handler;
+    }
+
+    get loadDataStarted() {
+        return this.#loadDataStarted;
+    }
+
+    set loadDataStarted(started) {
+        this.#loadDataStarted = started;
     }
 
     get handler() {
@@ -135,14 +147,40 @@ class FrontConnection extends Connection {
         this.handler.invoke(this);
     }
 
-    sendError(seq, errno, message, sqlState = ErrorPacket.DEFAULT_SQL_STATE) {
+    /** Send an error packet to client.
+     * 
+     * @param seq Error packet sequence id
+     * @param errno Error number
+     * @param args The message format arguments, an array or multi-args
+     * 
+     * @returns The error packet
+     */
+    sendError(seq, errno) {
         let error = new ErrorPacket();
         error.sequenceId = seq;
         error.errno = errno;
-        if (message instanceof Buffer) error.message = message;
-        else error.message = (message? Buffer.from(message, this.charset): null);
-        error.sqlState = sqlState;
+
+        let mo;
+        let args = arguments;
+        if (args.length > 2) {
+            let arg = args[2];
+            if (arg.constructor === Array) args = arg;
+            else args = Array.prototype.slice.call(args, 2);
+            mo = ErrorCode.messageOf(errno, args);
+        } else {
+            mo = ErrorCode.messageOf(errno);
+        }
+        if (mo) {
+            error.message = mo.message;
+            error.sqlState = mo.sqlState;
+        }
+        
         error.write(this.writeBuffer, this, true);
+        return error;
+    }
+
+    ping() {
+        this.send(OkPacket.OK, "MySQL Ok packet");
     }
 
     send(buffer, start = 0, end = -1, msg) {

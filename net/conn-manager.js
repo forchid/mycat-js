@@ -2,6 +2,7 @@ const BufferPool = require('../buffer/buffer-pool');
 const TypeHelper = require('../util/type-helper');
 const FrontConnection = require('./front-connection');
 const BackConnection = require('./back-connection');
+const CommandCounter = require('../statistic/command-counter');
 
 /** The frontend/backend connection manager that checks connection whether idle,
  * sql execution timeout, manage buffer resources, also gathers statistics of SQL 
@@ -19,11 +20,16 @@ class ConnManager {
 
     #inBytes = 0;
 	#outBytes = 0;
+    #cmdCounter = new CommandCounter();
 
     constructor (bufferPool, name = 'ConnManager') {
         TypeHelper.ensureInstanceof(bufferPool, BufferPool, 'bufferPool');
         this.#bufferPool = bufferPool;
         this.#name = name;
+    }
+
+    get cmdCounter() {
+        return this.#cmdCounter;
     }
 
     get name() {

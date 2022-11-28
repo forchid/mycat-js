@@ -18,6 +18,7 @@ class MycatPrivileges {
 
     schemaExists(schema) {
         let schemas = getSchemas();
+        if (schema) schema = schema.toUpperCase();
         return schemas.has(schema);
     }
 
