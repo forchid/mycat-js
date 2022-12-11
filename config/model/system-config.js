@@ -147,7 +147,8 @@ class SystemConfig {
 
     #usingAIO = 0;
 	#packetHeaderSize = 4;
-	#maxPacketSize = 16 * 1024 * 1024;
+	#maxPacketSize =  1 << 24; // MyCat backend connection max_packet_size
+    #maxAllowedPacket = 1 << 24; // MyCat frontend conn max_allowed_packet
 	#mycatNodeId = 1;
 	#useCompression = 0;	
 	#useSqlStat = 1;
@@ -537,17 +538,42 @@ class SystemConfig {
         }
     }
 
-    /** MySQL protocol max packet size, default 16m. */
+    /** MySQL protocol max packet size(not include header size) 
+     * in backend connection, the logical packet payload max size,
+     * default maximum 16m. */
     get maxPacketSize() {
         return this.#maxPacketSize;
     }
 
     set maxPacketSize(size) {
         let n = TypeHelper.parseIntDecimal(size, 'maxPacketSize');
-        if (n > 0) {
+        if (n >= 1024) {
+            let max = 1 << 30;
+            if (n > max) {
+                throw new ConfigError(`maxPacketSize ${n} great than the max ${max}.`);
+            }
             this.#maxPacketSize = n;
         } else {
-            throw new ConfigError(`maxPacketSize ${n} less than 0`);
+            throw new ConfigError(`maxPacketSize ${n} less than 1024.`);
+        }
+    }
+
+    /** MySQL protocol max_allowed_packet size(not include header size) 
+     * in frontend connection, the logical packet payload max size, default 16m. */
+    get maxAllowedPacket() {
+        return this.#maxAllowedPacket;
+    }
+
+    set maxAllowedPacket(size) {
+        let n = TypeHelper.parseIntDecimal(size, 'maxAllowedPacket');
+        if (n >= 1024) {
+            let max = 1 << 30;
+            if (n > max) {
+                throw new ConfigError(`maxAllowedPacket ${n} great than the max ${max}.`);
+            }
+            this.#maxAllowedPacket = n;
+        } else {
+            throw new ConfigError(`maxAllowedPacket ${n} less than 1024.`);
         }
     }
 

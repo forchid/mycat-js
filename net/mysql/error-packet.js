@@ -56,24 +56,22 @@ class ErrorPacket extends MysqlPacket {
 		return size;
     }
 
-    write(buffer, frontConn, flush = true) {
+    write(frontConn, offset = 0, flush = true) {
         this.#source = frontConn;
-        this.payloadLength = this.calcPayloadLength();
-        frontConn.ensureSize(buffer, 4 + this.payloadLength);
-        
-        let p = 0;
-        BufferHelper.writeUInt24LE(buffer, this.payloadLength, p);
-        p += 3;
-        buffer.writeInt8(this.sequenceId, p++);
-        buffer.writeInt8(this.fieldCount, p++);
-        buffer.writeUInt16LE(this.errno, p);
-        p += 2;
+        let pSize = this.payloadLength = this.calcPayloadLength();
+        let packetLen = frontConn.packetHeaderSize + pSize;
+        let p = offset;
+
+        let buffer = frontConn.ensureWriteBuffer(p + packetLen);
+        p = BufferHelper.writeUInt24LE(buffer, pSize, p);
+        p = buffer.writeInt8(this.sequenceId, p);
+        p = buffer.writeInt8(this.fieldCount, p);
+        p = buffer.writeUInt16LE(this.errno, p);
 
         let cap = frontConn.capabilities;
         if (cap & Capabilities.CLIENT_PROTOCOL_41) {
-            buffer.writeInt8(this.mark, p++);
-            buffer.set(this.sqlState, p);
-            p += this.sqlState.length;
+            p = buffer.writeInt8(this.mark, p);
+            p += buffer.set(this.sqlState, p);
         }
 
         let m = this.message;
@@ -81,11 +79,11 @@ class ErrorPacket extends MysqlPacket {
             let max = ErrorPacket.MYSQL_ERRMSG_SIZE;
             let n = m.length;
             if (n > m) n = max;
-            buffer.set(m, p);
-            p += n;
+            p += buffer.set(m, p);
         }
 
-        frontConn.write(buffer, 0, p, flush, this);
+        if (flush) return frontConn.write(buffer, offset, p, flush, this);
+        else return p;
     }
 
 }

@@ -258,38 +258,48 @@ class MysqlMessage {
         }
     }
 
-    static writeLengthEncodedInt(buffer, n, p = 0) {
+    /** Write the length-encoded number into the buffer.
+     * 
+     * @param buffer the write buffer
+     * @param n the int number, big int
+     * @param p the offset of write buffer
+     * 
+     * @returns the buffer offset after written
+     */
+    static writeLengthEncoded(buffer, n, p = 0) {
         let len = this.lengthEncodedOf(n);
 
-        if (n.constructor === Buffer) {
-            n = n.length;
-        }
         switch (len) {
             case 1:
-                buffer.writeUInt8(n, p);
+                p = buffer.writeUInt8(n, p);
                 break;
             case 3:
-                buffer.writeUInt8(0xfc, p++);
-                buffer.writeUInt16(n, p);
+                p = buffer.writeUInt8(0xfc, p);
+                p = buffer.writeUInt16(n, p);
                 break;
             case 4:
-                buffer.writeUInt8(0xfd, p++);
-                BufferHelper.writeUInt24LE(buffer, n, p);
+                p = buffer.writeUInt8(0xfd, p);
+                p = BufferHelper.writeUInt24LE(buffer, n, p);
                 break;
             case 9:
-                buffer.writeUInt8(0xfe, p++);
-                buffer.writeInt64(n, p);
+                p = buffer.writeUInt8(0xfe, p);
+                p = buffer.writeInt64(n, p);
                 break;
             default:
                 throw new Error(`Unknown length-encoded ${len}`);
         }
 
-        return len;
+        return p;
     }
 
+    /** Calculate the byte count of the arg n length encoded.
+     * 
+     * @param n a int number, big int
+     * @returns the encoded byte count
+     */
     static lengthEncodedOf(n) {
         let c = n.constructor;
-        if (c === Number) {
+        if (c === Number || c === BigInt) {
             if(n < 0){
                 return 9;
             } else if (n < 0xfb) {
@@ -301,17 +311,35 @@ class MysqlMessage {
             } else {
                 return 9;
             }
-        } else if (c === Buffer) {
-            return this.lengthEncodedOf(n.length);
         } else {
-            throw new TypeError("The arg n type unsupported");
+            throw new TypeError(`The arg n ${c.name} unsupported`);
         }
     }
 
-    static writeBytesWithLength(out, inp, p) {
-        p += this.writeLengthEncodedInt(out, inp, p);
-        p += out.set(inp, p);
+    /** Write the src into buf from the buf offset p. 
+     * If the src is null, then write the nil.
+     * 
+     * @param buf the target buffer
+     * @param src the source buffer
+     * @param p the buf offset
+     * @param nil default 0
+     * 
+     * @returns the buf offset after written
+     */
+    static writeBytesWithLength(buf, src, p, nil = 0) {
+        if (src) {
+            let n = src.length;
+            p = this.writeLengthEncoded(buf, n, p);
+            p += buf.set(src, p);
+        } else {
+            p = buf.writeInt8(nil, p);
+        }
         return p;
+    }
+
+    static bufferLength(buffer) {
+        let n = buffer.length;
+        return this.lengthEncodedOf(n) + n;
     }
 
 }

@@ -14,10 +14,11 @@ class NetError extends Error {
 }
 
 function messageStr(m) {
-    if (m instanceof Error) 
+    if (m instanceof Error) {
         return m.message;
-    else 
-        m + '';
+    } else {
+        return m + '';
+    }
 }
 
 module.exports = NetError;

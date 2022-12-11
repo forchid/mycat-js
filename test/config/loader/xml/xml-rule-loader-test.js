@@ -2,10 +2,9 @@ const PartitionByCRC32PreSlot = require('../../../../route/function/partition-by
 const PartitionByMod = require('../../../../route/function/partition-by-mod');
 const PartitionByMurmurHash = require('../../../../route/function/partition-by-murmur-hash');
 const RuleConfig = require('../../../../config/model/rule/rule-config');
-const runIf = require('../../../run-if');
 const TableRuleConfig = require('../../../../config/model/table-rule-config');
 const XMLRuleLoader = require('../../../../config/loader/xml/xml-rule-loader');
-
+const runIf = require('../../../run-if');
 const path = require('path');
 
 runIf(__filename, run);

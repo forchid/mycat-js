@@ -1,5 +1,6 @@
 const TypeHelper = require("./type-helper");
 const co = require('coroutine');
+const CoHelper = require("./co-helper");
 
 /**
  * A scheduler for named tasks (include periodic task).
@@ -71,6 +72,7 @@ class Scheduler {
         let tm = setTimeout(() => {
             const cur = co.current();
             try {
+                CoHelper.name = name;
                 cur.canceled = false;
                 tm._cos = [cur];
                 if (isFun) task(... args);
@@ -85,6 +87,7 @@ class Scheduler {
                             const cur = co.current();
                             tm._cos = tm._cos || [];
                             try {
+                                CoHelper.name = name;
                                 fin = false;
                                 cur.canceled = false;
                                 tm._cos.push(cur);

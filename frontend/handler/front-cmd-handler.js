@@ -2,8 +2,8 @@ const BufferHelper = require("../../buffer/buffer-helper");
 const Handler = require("../../handler");
 const MycatServer = require("../../mycat-server");
 const Logger = require("../../util/logger");
-const ErrorCode = require("../mysql/error-code");
-const MysqlPacket = require("../mysql/mysql-packet");
+const ErrorCode = require("../../net/mysql/error-code");
+const MysqlPacket = require("../../net/mysql/mysql-packet");
 
 /**
  * The frontend command dispatcher.
@@ -29,6 +29,13 @@ class FrontCmdHandler extends Handler {
                 counter.quit++;
                 source.close("quit cmd");
                 break;
+            case MysqlPacket.COM_QUERY:
+                counter.query++;
+                let seq = buffer.readUInt8(3);
+                let charset = source.charset;
+                let sql = buffer.toString(charset, 5, length);
+                // Next query handler
+                return { source, sql, seq };
             default:
                 counter.other++;
                 let config = MycatServer.instance.config;

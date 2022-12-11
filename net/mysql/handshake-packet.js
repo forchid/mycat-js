@@ -1,3 +1,4 @@
+const BufferHelper = require("../../buffer/buffer-helper");
 const Version = require("../../config/version");
 const MysqlPacket = require("./mysql-packet");
 
@@ -48,48 +49,41 @@ class HandshakePacket extends MysqlPacket {
         return size;
     }
 
-    write(buffer, frontConn, flush = true) {
-        let p = 0;
+    write(frontConn, offset = 0, flush = true) {
         let cap = this.serverCapabilities;
+        let pSize = this.payloadLength = this.calcPayloadLength();
+        let packetLength = frontConn.packetHeaderSize + pSize;
+        let p = offset;
 
-        this.payloadLength = this.calcPayloadLength();
-        let packetLength = 4 + this.payloadLength;
-        frontConn.ensureSize(buffer, packetLength);
+        let buffer = frontConn.ensureWriteBuffer(p + packetLength);
         // Header
-        BufferHelper.writeUInt24LE(buffer, this.payloadLength, p);
-        p += 3;
-        buffer.writeInt8(this.sequenceId, p++);
+        p = BufferHelper.writeUInt24LE(buffer, pSize, p);
+        p = buffer.writeInt8(this.sequenceId, p);
 
         // Payload
-        buffer.writeInt8(this.protocolVersion, p++);
-        buffer.set(this.serverVersion, p);
-        p += this.serverVersion.length;
-        buffer.writeInt8(0, p++);
-        buffer.writeUInt32LE(this.threadId, p);
-        p += 4;
+        p = buffer.writeInt8(this.protocolVersion, p);
+        p += buffer.set(this.serverVersion, p);
+        p = buffer.writeInt8(0, p);
+        p = buffer.writeUInt32LE(this.threadId, p);
 
-        buffer.set(this.seed, p); // auth-data-1
-        p += this.seed.length;
-        buffer.writeInt8(0, p++); // [00] filler
+        p += buffer.set(this.seed, p); // auth-data-1
+        p = buffer.writeInt8(0, p); // [00] filler
 
-        buffer.writeUInt16LE(cap, p);
-        p += 2;
-        buffer.writeInt8(this.serverCharsetIndex, p++);
-        buffer.writeUInt16LE(this.serverStatus, p);
-        p += 2;
+        p = buffer.writeUInt16LE(cap, p);
+        p = buffer.writeInt8(this.serverCharsetIndex, p);
+        p = buffer.writeUInt16LE(this.serverStatus, p);
         // cap high part filled by filler13
 
         // filler13: cap high part + filler10 + filler0
         let filler13 = HandshakePacket.#FILLER_13;
-        buffer.set(filler13, p);
-        p += filler13.length;
+        p += buffer.set(filler13, p);
 
         let rest = this.restOfScrambleBuff;
-        buffer.set(rest, p);
-        p += rest.length;
-        buffer.writeInt8(0, p++);
+        p += buffer.set(rest, p);
+        p = buffer.writeInt8(0, p);
 
-        frontConn.write(buffer, 0, p, flush, this);
+        if (flush) return frontConn.write(buffer, offset, p, flush, this);
+        else return p;
     }
 
 }

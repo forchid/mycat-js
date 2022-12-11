@@ -7,14 +7,14 @@ class CoHelper {
         throw new UnsupportedError('CoHelper()');
     }
 
-    static name(name) {
-        let cur = co.current();
-        cur.name = name;
-    }
-
-    static name() {
+    static get name() {
         let cur = co.current();
         return cur.name;
+    }
+
+    static set name(name) {
+        let cur = co.current();
+        cur.name = name;
     }
 
 }

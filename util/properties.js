@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const StringHelper = require('./string-helper');
+const TypeHelper = require('./type-helper');
 
 class Properties {
 
@@ -12,6 +13,15 @@ class Properties {
 
     setProperty(key, value) {
         this.#props.set(key, value);
+    }
+
+    getIntProperty(key, def) {
+        let prop = this.getProperty(key);
+        if (prop) {
+            return TypeHelper.parseIntDecimal(prop);
+        } else {
+            return def;
+        }
     }
 
     iterate(fun) {

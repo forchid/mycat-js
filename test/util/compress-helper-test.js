@@ -4,6 +4,7 @@ const runIf = require('../run-if');
 runIf(__filename, run);
 
 function run() {
+    const minCompLen = 50;
 
     let raw = Buffer.from(
         '2e 00 00 00 03 73 65 6c    65 63 74 20 22 30 31 32'+
@@ -16,8 +17,8 @@ function run() {
         'c4 cd 52 02 00 0c d1 0a    6c'.replace(/ /g, ''), 'hex');
 
     let unc0 = Buffer.from(
-        '0d 00 00 00 09 00 00 00    03 53 45 4c 45 43 54 20'+
-        '31'.replace(/ /g, ''), 'hex');
+        '09 00 00 00 03 53 45 4c    45 43 54 20 31'
+        .replace(/ /g, ''), 'hex');
     let unc1 = Buffer.from(
         '0d 00 00 00 00 00 00 09    00 00 00 03 53 45 4c 45'+
         '43 54 20 31'.replace(/ /g, ''), 'hex');
@@ -56,19 +57,19 @@ function run() {
         });
 
         it ('compressMysqlPacket()', () => {
-            let res = CompressHelper.compressMysqlPacket(raw);
+            let res = CompressHelper.compressMysqlPacket(raw, -1, minCompLen);
             assert.equal(0, com.compare(res));
-            res = CompressHelper.compressMysqlPacket(raw, raw.length);
-            assert.equal(0, com.compare(res));
-
-            res = CompressHelper.compressMysqlPacket([raw]);
-            assert.equal(0, com.compare(res));
-            res = CompressHelper.compressMysqlPacket([raw], 1);
+            res = CompressHelper.compressMysqlPacket(raw, raw.length, minCompLen);
             assert.equal(0, com.compare(res));
 
-            res = CompressHelper.compressMysqlPacket([unc0]);
+            res = CompressHelper.compressMysqlPacket([raw], -1, minCompLen);
+            assert.equal(0, com.compare(res));
+            res = CompressHelper.compressMysqlPacket([raw], 1, minCompLen);
+            assert.equal(0, com.compare(res));
+
+            res = CompressHelper.compressMysqlPacket([unc0], -1, minCompLen);
             assert.equal(0, unc1.compare(res));
-            res = CompressHelper.compressMysqlPacket([unc0], 1);
+            res = CompressHelper.compressMysqlPacket([unc0], 1, minCompLen);
             assert.equal(0, unc1.compare(res));
 
             let mpRaw = Buffer.from(
@@ -87,7 +88,7 @@ function run() {
                 'ff 65 64 90 67 60 60 65    60 60 fe 07 54 cc 60 cc'+
                 'c0 c0 62 94 48 32 00 ea    67 05 eb 07 00 8d f9 1c'+
                 '64'.replace(/ /g, ''), 'hex');
-            res = CompressHelper.compressMysqlPacket(mpRaw);
+            res = CompressHelper.compressMysqlPacket(mpRaw, -1, minCompLen);
             assert.equal(0, mpCom.compare(res));
 
             res = CompressHelper.decompressMysqlPacket(mpCom);

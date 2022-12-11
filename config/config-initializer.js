@@ -169,9 +169,9 @@ class Initializer {
     }
 
     initHostSchemas() {
-        const config = this.#configInitializer;
-        const dataHosts = config.dataHosts;
-        const dataNodes = config.dataNodes;
+        const initializer = this.#configInitializer;
+        const dataHosts = initializer.dataHosts;
+        const dataNodes = initializer.dataNodes;
 
         for (let hostPool of dataHosts.values()) {
             let hostName = hostPool.hostName;
@@ -180,6 +180,13 @@ class Initializer {
                 let dbPool = node.dbPool;
                 if (dbPool.hostName === hostName) {
                     schemas.push(node.database);
+                }
+            }
+            if (schemas.length === 0) {
+                let config = hostPool.dataHostConfig;
+                if (config.dbType === 'sqlite') {
+                    schemas.push("main");
+                    schemas.push("temp");
                 }
             }
             hostPool.schemas = schemas;

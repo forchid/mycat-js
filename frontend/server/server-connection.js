@@ -1,15 +1,21 @@
-const Isolation = require("../config/isolation");
-const FrontConnection = require("../net/front-connection");
+const Isolation = require("../../config/isolation");
+const FrontConnection = require("../front-connection");
+const ServerSysVariables = require("./server-sys-variables");
 
 class ServerConnection extends FrontConnection {
 
+    #sysVars = ServerSysVariables.createSysVars();
+
     #txIsolation = Isolation.REPEATED_READ;
-    #autoCommit = true;
     #readonly = false;
     #lastInsertId = 0;
 
     constructor (id, socket, handler) {
         super(id, socket, handler);
+    }
+
+    get sysVars() {
+        return this.#sysVars;
     }
 
     get txIsolation() {
@@ -18,14 +24,6 @@ class ServerConnection extends FrontConnection {
 
     set txIsolation(level) {
         this.#txIsolation = level;
-    }
-
-    get autoCommit() {
-        return this.#autoCommit;
-    }
-
-    set autoCommit(autoCommit) {
-        this.#autoCommit = autoCommit;
     }
 
     get readonly() {

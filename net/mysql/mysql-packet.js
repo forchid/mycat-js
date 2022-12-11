@@ -159,6 +159,8 @@ class MysqlPacket {
     
     static get packetHeaderSize() { 4; }
 
+    static get maxPayloadSize() { return 0xffffff; }
+
     /** A packet consists of payload_length, sequence_id, payload. */
     payloadLength = 0;
     sequenceId = 0;
@@ -167,8 +169,10 @@ class MysqlPacket {
         throw new UnsupportedError('Property packetInfo not impl');
     }
 
-    /** Write this packet into buffer. */
-    write(buffer, frontConn, flush = false, sendIfFull = true) {
+    /** Write this packet into the write buffer of the frontConn. 
+     * @returns the current position of this write buffer
+    */
+    write(frontConn, offset = 0, flush = false) {
         throw new UnsupportedError('write() not impl');
     }
 

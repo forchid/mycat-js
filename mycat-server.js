@@ -4,6 +4,7 @@ const Scheduler = require('./util/scheduler');
 const BufferPool = require('./buffer/buffer-pool');
 const Properties = require('./util/properties');
 const Logger = require('./util/logger');
+const RouteService = require('./route/route-service');
 
 class MycatServer {
 
@@ -15,6 +16,8 @@ class MycatServer {
     #scheduler = new Scheduler();
     #connManager = null;
     #bufferPool = null;
+    // Init route service
+    #routeService = new RouteService();
 
     #dnIndexProperties = new Properties();
 
@@ -25,7 +28,6 @@ class MycatServer {
         // TODO
         // SQL recorder
         // Init cache service
-        // Init route service
 
         // Load dataNode active index from properties
         this.#dnIndexProperties = ServerHelper.loadDnIndexProps();
@@ -42,6 +44,7 @@ class MycatServer {
         SystemConfig.resetLogger();
         const config = this.config;
         const system = config.system;
+        const dataHosts = config.dataHosts;
 
         // TODO route strategy
         Logger.info('%s is ready to startup ...', MycatServer.NAME);
@@ -56,19 +59,28 @@ class MycatServer {
         let addr = system.bindIp;
         let backlog = system.serverBacklog;
         // Note: here require solving the cycled reference issue.
-        const ServerConnFactory = require('./server/server-conn-factory');
-        const ManagerConnFactory = require('./manager/manager-conn-factory');
+        const ServerConnFactory = require('./frontend/server/server-conn-factory');
+        const ManagerConnFactory = require('./frontend/manager/manager-conn-factory');
         let mgrFactory = new ManagerConnFactory();
         let svrFactory = new ServerConnFactory();
         const NetServer = require('./net/net-server');
         const manager = new NetServer(prefix+'Manager', addr, system.managerPort, backlog, mgrFactory);
         const server = new NetServer(prefix+'Server', addr, system.serverPort, backlog, svrFactory);
-        
+
         let failed = true;
         try {
             manager.start();
             server.start();
-            // TODO init data hosts
+            // init data hosts
+            for (let dbPool of dataHosts.values()) {
+                let hostName = dbPool.hostName;
+                let index = this.#dnIndexProperties.getIntProperty(hostName, 0);
+                if (index !== 0) {
+                    Logger.info(`Init dataHost '${hostName}' by using source#${index}.`);
+                }
+                dbPool.init(index);
+                dbPool.startHeartbeat();
+            }
             failed = false;
         } finally {
             if (failed) {
@@ -76,6 +88,26 @@ class MycatServer {
                 server.stop();
             }
         }
+
+        // Schedule timers 
+        let scheduler = this.#scheduler;
+        scheduler.schedule("dataNodeHeartbeat", () => {
+            Logger.debug("DataNode heartbeat start.");
+            for (let dbPool of dataHosts.values()) {
+                dbPool.doHeartbeat();
+            }
+            Logger.debug("DataNode heartbeat end.");
+        }, 0, system.dataNodeHeartbeatPeriod);
+    }
+
+    saveDataHostIndex(hostName, index) {
+        let props = this.#dnIndexProperties;
+        props.setProperty(hostName, index);
+        ServerHelper.saveDnIndexProps(props);
+    }
+
+    get routeService() {
+        return this.#routeService;
     }
 
     get connManager() {
@@ -139,11 +171,18 @@ class MycatServer {
 
 class ServerHelper {
 
+    static #dnindexFile = "dnindex.properties";
+
     static loadDnIndexProps() {
         const props = new Properties();
         let baseDir = SystemConfig.confPath;
-        props.load(baseDir, 'dnindex.properties');
+        props.load(baseDir, this.#dnindexFile);
         return props;
+    }
+
+    static saveDnIndexProps(props) {
+        let baseDir = SystemConfig.confPath;
+        props.save(baseDir, this.#dnindexFile);
     }
 
 }

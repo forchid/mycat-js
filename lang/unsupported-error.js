@@ -2,7 +2,7 @@ class UnsupportedError extends Error {
 
     constructor(message) {
         super(message);
-        this.name = 'UnsupportedError';
+        this.name = this.constructor.name;
     }
 
 }

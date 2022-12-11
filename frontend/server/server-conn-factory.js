@@ -1,18 +1,23 @@
-const MycatPrivileges = require("../config/mycat-privileges");
-const MycatServer = require("../mycat-server");
-const FrontAuthHandler = require("../net/handler/front-auth-handler");
-const FrontConnFactory = require("../net/factory/front-conn-factory");
-const FrontReadHandler = require("../net/handler/front-read-handler");
-const CoHelper = require("../util/co-helper");
+const MycatPrivileges = require("../../config/mycat-privileges");
+const MycatServer = require("../../mycat-server");
+const FrontAuthHandler = require("../handler/front-auth-handler");
+const FrontConnFactory = require("../factory/front-conn-factory");
+const FrontReadHandler = require("../handler/front-read-handler");
+const CoHelper = require("../../util/co-helper");
 const ServerConnection = require("./server-connection");
-const FrontCmdHandler = require("../net/handler/front-cmd-handler");
+const FrontCmdHandler = require("../handler/front-cmd-handler");
+const FrontQueryHandler = require("../handler/front-query-handler");
 
 class ServerConnFactory extends FrontConnFactory {
 
     create(socket) {
         // Server handler chain:
         // >read, auth, command, prepare, query, loadDataInFile
-        let handlers = [new FrontAuthHandler(), new FrontCmdHandler()];
+        let handlers = [
+            new FrontAuthHandler(),
+            new FrontCmdHandler(), 
+            new FrontQueryHandler()
+        ];
         let handler = new FrontReadHandler(handlers);
         
         let id = super.nextId;

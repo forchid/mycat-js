@@ -84,6 +84,11 @@ class MycatConfig {
         return (this.#backup && this.#status != rb);
     }
 
+    getSchema(name) {
+        name = name.toUpperCase();
+        return this.#schemas.get(name);
+    }
+
     copy() {
         let copy = new MycatConfig(false);
         copy.#schemas = this.schemas;

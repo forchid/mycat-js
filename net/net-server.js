@@ -1,12 +1,12 @@
 const TypeHelper = require('../util/type-helper');
-const FrontConnFactory = require('./factory/front-conn-factory');
+const FrontConnFactory = require('../frontend/factory/front-conn-factory');
 const Logger = require('../util/logger');
 const CoHelper = require('../util/co-helper');
 const MycatServer = require('../mycat-server');
+const NetError = require('./net-error');
 
 const net = require('net');
 const co = require('coroutine');
-const NetError = require('./net-error');
 
 /**
  * A network server based on socket and coroutine.

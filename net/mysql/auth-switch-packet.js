@@ -26,22 +26,20 @@ class AuthSwitchPacket extends MysqlPacket {
         this.authData = m.readBytes(this.payloadLength);
     }
 
-    write(buffer, frontConn) {
-        let payloadLen = this.calcPayloadLength();
-        let p = 0;
+    write(frontConn, offset = 0) {
+        let pSize = this.payloadLength = this.calcPayloadLength();
+        let packetLen = frontConn.packetHeaderSize + pSize;
+        let p = offset;
 
-        frontConn.ensureSize(buffer, 4  + payloadLen);
-        BufferHelper.writeUInt24LE(buffer, payloadLen, p);
-        p += 3;
-        buffer.writeUInt8(this.sequenceId, p++);
+        let buffer = frontConn.ensureWriteBuffer(p + packetLen);
+        p = BufferHelper.writeUInt24LE(buffer, pSize, p);
+        p = buffer.writeUInt8(this.sequenceId, p);
 
-        buffer.writeUInt8(AuthSwitchPacket.#STATUS, p++);
-        buffer.set(this.pluginName, p);
-        p += this.pluginName.length;
-        buffer.set(this.authData, p);
-        p += this.authData.length;
+        p = buffer.writeUInt8(AuthSwitchPacket.#STATUS, p);
+        p += buffer.set(this.pluginName, p);
+        p += buffer.set(this.authData, p);
 
-        frontConn.send(buffer, 0, p, this);
+        return frontConn.send(buffer, offset, p, this);
     }
 
     calcPayloadLength() {

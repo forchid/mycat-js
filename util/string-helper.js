@@ -57,7 +57,7 @@ class StringHelper {
         if (m < 10) m = '0' + m;
         let s = d.getSeconds();
         if (s < 10) s = '0' + s;
-        return `${h}-${m}-${s}`;
+        return `${h}:${m}:${s}`;
     }
 
     static formatDateTime(d) {

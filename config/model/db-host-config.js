@@ -16,7 +16,7 @@ class DbHostConfig {
     #checkAlive = true;
 
     #dbType = '';
-    #maxCon = 1000;
+    #maxCon = 100;
     #minCon = 10;
     #filters = 'mergeStat';
     #logTime = PhysicalDBPool.LOG_TIME;
@@ -61,6 +61,7 @@ class DbHostConfig {
 
     get encryptPassword() {  return this.#encryptPassword; }
 
+    /** Whether check idle connection alive. */
     get checkAlive() {  return this.#checkAlive; }
 
     get maxCon() { return this.#maxCon; }

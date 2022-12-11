@@ -3,12 +3,12 @@ const Handler = require("../../handler");
 const MycatServer = require("../../mycat-server");
 const Logger = require("../../util/logger");
 const MysqlPassword = require("../../util/mysql-password");
-const AuthPacket = require("../mysql/auth-packet");
-const AuthSwitchPacket = require("../mysql/auth-switch-packet");
-const ErrorCode = require("../mysql/error-code");
-const HandshakeV10Packet = require("../mysql/handshake-v10-packet");
-const MysqlPacket = require("../mysql/mysql-packet");
-const QuitPacket = require("../mysql/quit-packet");
+const AuthPacket = require("../../net/mysql/auth-packet");
+const AuthSwitchPacket = require("../../net/mysql/auth-switch-packet");
+const ErrorCode = require("../../net/mysql/error-code");
+const HandshakeV10Packet = require("../../net/mysql/handshake-v10-packet");
+const MysqlPacket = require("../../net/mysql/mysql-packet");
+const QuitPacket = require("../../net/mysql/quit-packet");
 
 class FrontAuthHandler extends Handler {
 
@@ -51,7 +51,7 @@ class FrontAuthHandler extends Handler {
             if (plugin && def.compare(plugin) !== 0) {
                 let authSwitch = new AuthSwitchPacket(def, source.seed);
                 authSwitch.sequenceId = this.#seq + 1;
-                authSwitch.write(source.writeBuffer, source);
+                authSwitch.write(source);
                 return;
             }
         }
@@ -108,6 +108,7 @@ function success(source, packet, authOk) {
     source.seed = null;
     source.user = user;
     source.schema = packet.database;
+    source.maxPacketSize = packet.maxPacketSize;
     source.charsetIndex = packet.charsetIndex;
 
     let system = MycatServer.instance.system;

@@ -2,6 +2,7 @@ const Logger = require("../../util/logger");
 const LeastActiveLoadBalance = require("../load-balance/least-active-load-balance");
 const RandomLoadBalance = require("../load-balance/random-load-balance");
 const WeightedRrLoadBalance = require("../load-balance/weighted-rr-load-balance");
+const crypto = require("crypto");
 
 class PhysicalDbPool {
 
@@ -16,6 +17,9 @@ class PhysicalDbPool {
     #slaveIDs = '';
     #loadBalance = null;
     #allSources = [];
+
+    #initOk = false;
+    #activeIndex = 0;
 
     constructor (name, dataHostConfig, writeSources, readSources, 
         balance, writeType) {
@@ -45,6 +49,14 @@ class PhysicalDbPool {
         Logger.info(`Total data sources of the data host '%s' is %s.`, name, n);
     }
 
+    get dataHostConfig() {
+        return this.#dataHostConfig;
+    }
+
+    get writeType() {
+        return this.#writeType;
+    }
+
     get hostName() {
         return this.#hostName;
     }
@@ -67,6 +79,105 @@ class PhysicalDbPool {
 
     set schemas(schemas) {
         this.#schemas = schemas;
+    }
+
+    get initOk() {
+        return this.#initOk;
+    }
+
+    get activeIndex() {
+        return this.#activeIndex;
+    }
+
+    /** Query an appropriate write source by writeType. */
+    get source() {
+        const sources = this.#writeSources;
+        switch (this.writeType) {
+            case PhysicalDbPool.WRITE_ONLY_ONE_NODE:
+                return sources[this.#activeIndex];
+            case PhysicalDbPool.WRITE_RANDOM_NODE:
+                let n = sources.length;
+                let index = Math.abs(crypto.randomBytes(1).readUInt8() % n);
+                let source = sources[index];
+                if (source.alive) {
+                    return source;
+                }
+                let aliveList = [];
+                sources.forEach((s, i) => {
+                    if (i != index && source.alive) {
+                        aliveList.push(s);
+                    }
+                });
+                n = aliveList.length;
+                if (n == 0) {
+                    return sources[0];
+                }
+                index = Math.abs(crypto.randomBytes(1).readUInt8() % n);
+                return aliveList[index];
+            default:
+                throw new Error(`Unknown writeType ${this.writeType}!`);
+        }
+    }
+
+    startHeartbeat() {
+        for (let source of this.#allSources) {
+            source.startHeartbeat();
+        }
+    }
+
+    doHeartbeat() {
+        Logger.debug("DbPool '%s' heartbeat start ..", this.hostName);
+        for (let source of this.#allSources) {
+            source.doHeartbeat();
+        }
+        Logger.debug("DbPool '%s' heartbeat end.", this.hostName);
+    }
+
+    checkIndex(index) {
+        let sources = this.#writeSources;
+        return (index >= 0 && index < sources.length);
+    }
+
+    nextIndex(index) {
+        return (++index % this.#writeSources.length);
+    }
+
+    init(index) {
+        const name = this.hostName;
+        const schemas = this.schemas;
+        if (schemas.length === 0) {
+            Logger.warn("DbPool '%s' no dataNode, so skip init.", name);
+            return;
+        }
+        if (!this.checkIndex(index)) {
+            let e = `WriteSource index ${index} out of range.`;
+            throw new RangeError(e);
+        }
+
+        let source = this.#writeSources[index];
+        let initSize = source.dbConfig.minCon;
+        let ok = false;
+        for (let i = 0; i < initSize; ++i) {
+            let schema = schemas[i % schemas.length];
+            try {
+                let conn = source.getConnection(schema, true);
+                conn.release();
+                ok = true;
+                Logger.debug("DbPool '%s' init a conn of schema '%s' OK.", name, schema);
+            } catch (e) {
+                let m = e.stack || e.message;
+                let f = "DbPool '%s' init a conn of schema '%s' failed - %s";
+                Logger.warn(f, name, schema, m);
+            }
+        }
+        
+        if (this.#initOk = ok) {
+            this.#activeIndex = index;
+            if (this.writeType == PhysicalDbPool.WRITE_ONLY_ONE_NODE) {
+                const MycatServer = require("../../mycat-server");
+                MycatServer.instance.saveDataHostIndex(name, index);
+            }
+        }
     }
 
     generateAllSources() {

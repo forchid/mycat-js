@@ -1,4 +1,4 @@
-const FrontConnFactory = require("../net/factory/front-conn-factory");
+const FrontConnFactory = require("../factory/front-conn-factory");
 
 class ManagerConnFactory extends FrontConnFactory {
 

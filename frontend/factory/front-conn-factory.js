@@ -1,10 +1,9 @@
 const UnsupportedError = require("../../lang/unsupported-error");
 const MycatServer = require("../../mycat-server");
+const Connection = require("../../net/connection");
 
 class FrontConnFactory {
-
-    static #ID_GEN = 0;
-
+    
     /** Make an frontend connection by a socket.
      * 
      * @param socket A net.Socket
@@ -28,7 +27,7 @@ class FrontConnFactory {
         let mycat = MycatServer.instance;
         let system = mycat.system;
         
-        conn.maxPacketSize = system.maxPacketSize;
+        conn.maxAllowedPacket = system.maxAllowedPacket;
         conn.packetHeaderSize = system.packetHeaderSize;
         conn.charset = system.charset;
         conn.traceProtocol = system.traceProtocol;
@@ -37,7 +36,7 @@ class FrontConnFactory {
     }
 
     get nextId() {
-        return ++FrontConnFactory.#ID_GEN;
+        return Connection.NEXT_ID;
     }
 
 }

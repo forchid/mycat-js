@@ -11,17 +11,25 @@ class BufferHelper {
         return i;
     }
 
+    /** Write a unsigned 3 bytes int into the buffer.
+     * 
+     * @param buffer
+     * @param i the written number
+     * @param p offset
+     * @returns the buffer offset after written
+     */
     static writeUInt24LE(buffer, i, p = 0) {
         TypeHelper.ensureInstanceof(buffer, Buffer, 'buffer');
         TypeHelper.ensureInteger(i, 'i');
-        buffer.writeUInt8(i, p++);
-        buffer.writeUInt8(i >>> 8, p++);
-        buffer.writeUInt8(i >>> 16, p++);
+        p = buffer.writeUInt8(i, p);
+        p = buffer.writeUInt8(i >>> 8, p);
+        p = buffer.writeUInt8(i >>> 16, p);
+        return p;
     }
 
-    static dumpHex(buffer, start = 0, end = -1, indent = '  ') {
+    static dumpHex(buffer, start = 0, end = -1, indent = '  ', limit = 1024) {
         TypeHelper.ensureInstanceof(buffer, Buffer, 'buffer');
-        return IoHelper.dumpHex(buffer, start, end, indent);
+        return IoHelper.dumpHex(buffer, start, end, indent, limit);
     }
 
 }

@@ -9,18 +9,23 @@ const iconv = require('iconv');
  */
 class Connection {
 
+    static #ID_GEN = 0;
+
     #id = 0;
     #closed = false;
     #startupTime = new Date().getTime();
     #lastReadTime = this.#startupTime;
     #lastWriteTime = this.#startupTime;
 
+    #schema = '';
+    #autoCommit = true;
     #host = ''; // remote host
     #port = 0;  // remote port
     #localPort = 0;
-    #maxPacketSize = 0;
-    #packetHeaderSize = 0;
-    #charset = ''; // Init in frontend factory
+    #maxPacketSize = 1 << 24; // Reset after auth OK if frontend
+    #maxAllowedPacket = 1 << 24;
+    #packetHeaderSize = 4;
+    #charset = ''; // Init in conn factory
     #charsetIndex = 0;
     #idleTimeout = 0;
 
@@ -31,6 +36,22 @@ class Connection {
     constructor (id) {
         TypeHelper.ensureInteger(id, 'connection id');
         this.#id = id;
+    }
+
+    get schema() {
+        return this.#schema;
+    }
+
+    set schema(schema) {
+        this.#schema = schema;
+    }
+
+    get autoCommit() {
+        return this.#autoCommit;
+    }
+
+    set autoCommit(autoCommit) {
+        this.#autoCommit = autoCommit;
     }
 
     get cmdCounter() {
@@ -45,7 +66,11 @@ class Connection {
 
     get lastReadTime() { return this.#lastReadTime; }
 
+    set lastReadTime(n) { this.#lastReadTime = n; }
+
     get lastWriteTime() { return this.#lastWriteTime; }
+
+    set lastWriteTime(n) { this.#lastWriteTime = n; }
 
     get idleTimeout() { return this.#idleTimeout; }
 
@@ -72,6 +97,10 @@ class Connection {
     get maxPacketSize() { return this.#maxPacketSize; }
 
     set maxPacketSize(size) { this.#maxPacketSize = size; }
+
+    get maxAllowedPacket() { return this.#maxAllowedPacket; }
+
+    set maxAllowedPacket(size) { this.#maxAllowedPacket = size; }
 
     get packetHeaderSize() { return this.#packetHeaderSize; }
 
@@ -134,6 +163,12 @@ class Connection {
         if (buffer.length < size) {
             this.connManager.resizeBuffer(buffer, size);
         }
+        return buffer;
+    }
+
+    ensureWriteBuffer(size) {
+        let buffer = this.#writeBuffer;
+        return this.ensureSize(buffer, size);
     }
 
     close(reason) {
@@ -161,6 +196,10 @@ class Connection {
     toString() {
         let name = this.constructor.name;
         return `${name}#${this.id}`;
+    }
+
+    static get NEXT_ID() {
+        return ++Connection.#ID_GEN;
     }
 
 }

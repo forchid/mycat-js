@@ -1,7 +1,7 @@
 const BufferPool = require('../buffer/buffer-pool');
 const TypeHelper = require('../util/type-helper');
-const FrontConnection = require('./front-connection');
-const BackConnection = require('./back-connection');
+const FrontConnection = require('../frontend/front-connection');
+const BackConnection = require('../backend/back-connection');
 const CommandCounter = require('../statistic/command-counter');
 
 /** The frontend/backend connection manager that checks connection whether idle,

@@ -1,20 +1,21 @@
 const TypeHelper = require("../util/type-helper");
-const Connection = require("./connection");
+const Connection = require("../net/connection");
 const Handler = require("../handler");
 const MycatServer = require("../mycat-server");
-const HandshakeV10Packet = require("./mysql/handshake-v10-packet");
+const HandshakeV10Packet = require("../net/mysql/handshake-v10-packet");
 const Capabilities = require("../config/capabilities");
-const HandshakePacket = require("./mysql/handshake-packet");
-const ErrorPacket = require("./mysql/error-packet");
-const NetError = require("./net-error");
+const HandshakePacket = require("../net/mysql/handshake-packet");
+const ErrorPacket = require("../net/mysql/error-packet");
+const NetError = require("../net/net-error");
 const CompressHelper = require("../util/compress-helper");
 const Logger = require("../util/logger");
 const BufferHelper = require("../buffer/buffer-helper");
-const ErrorCode = require("./mysql/error-code");
+const ErrorCode = require("../net/mysql/error-code");
+const OkPacket = require("../net/mysql/ok-packet");
+const UnsupportedError = require("../lang/unsupported-error");
 
 const net = require('net');
 const crypto = require('crypto');
-const OkPacket = require("./mysql/ok-packet");
 
 class FrontConnection extends Connection {
 
@@ -28,9 +29,11 @@ class FrontConnection extends Connection {
     #seed = null;
     #authenticated = false;
     #user = '';
-	#schema = '';
     
     #loadDataStarted = false;
+    #userVars = new Map();
+    // Route node name -> backend connection
+    #backends = new Map();
 
     constructor (id, socket, handler) {
         super(id);
@@ -41,6 +44,24 @@ class FrontConnection extends Connection {
         super.localPort = socket.localPort;
         this.#socket = socket;
         this.#handler = handler;
+    }
+
+    get sysVars() {
+        throw new UnsupportedError("sysVars");
+    }
+
+    getSysVar(name) {
+        name = name.toLowerCase();
+        return this.sysVars.get(name);
+    }
+
+    get userVars() {
+        return this.#userVars;
+    }
+
+    getUserVar(name) {
+        name = name.toLowerCase();
+        return this.userVars.get(name);
     }
 
     get loadDataStarted() {
@@ -61,14 +82,6 @@ class FrontConnection extends Connection {
 
     set user(user) {
         this.#user = user;
-    }
-
-    get schema() {
-        return this.#schema;
-    }
-
-    set schema(schema) {
-        this.#schema = schema;
     }
 
     get authenticated() {
@@ -138,6 +151,34 @@ class FrontConnection extends Connection {
         this.socket.timeout = timeout;
     }
 
+    getBackend(routeNode) {
+        let name = routeNode.name;
+        return this.#backends.get(name);
+    }
+
+    bindBackend(routeNode, backend) {
+        let old = this.getBackend(routeNode);
+        if (old && old != backend) {
+            let e = `The backend connection exists for ${routeNode + ""}`;
+            throw new Error(e);
+        }
+        this.#backends.set(routeNode.name, backend);
+        backend.routeNode = routeNode;
+    }
+
+    unbindBackend(backend) {
+        let routeNode = backend.routeNode;
+        if (routeNode) {
+            let name = routeNode.name;
+            this.#backends.delete(name);
+            backend.routeNode = null;
+            backend.release();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Start the connection handle.
      */
@@ -164,7 +205,7 @@ class FrontConnection extends Connection {
         let args = arguments;
         if (args.length > 2) {
             let arg = args[2];
-            if (arg.constructor === Array) args = arg;
+            if (arg && arg.constructor === Array) args = arg;
             else args = Array.prototype.slice.call(args, 2);
             mo = ErrorCode.messageOf(errno, args);
         } else {
@@ -175,7 +216,7 @@ class FrontConnection extends Connection {
             error.sqlState = mo.sqlState;
         }
         
-        error.write(this.writeBuffer, this, true);
+        error.write(this);
         return error;
     }
 
@@ -188,21 +229,23 @@ class FrontConnection extends Connection {
             msg = start;
             start = 0;
         }
-        this.write(buffer, start, end, true, msg);
+        return this.write(buffer, start, end, true, msg);
     }
 
     write(buffer, start = 0, end = -1, flush = false, msg = 'Packet') {
-        let socket = this.socket;
+        const socket = this.socket;
         if (start === true) {
             flush = true;
             start = 0;
         }
+        if (end === -1) {
+            end = buffer.length;
+        }
 
         let buf;
-        if (start === 0 && (end===-1 || end===buffer.length)) {
+        if (start === 0 && end === buffer.length) {
             buf = buffer;
         } else {
-            if (end === -1) end = buffer.length;
             buf = buffer.slice(start, end);
         }
         if (this.supportCompress) {
@@ -226,6 +269,8 @@ class FrontConnection extends Connection {
                 throw new NetError(`${this} flush failed - ${e}`);
             }
         }
+        
+        return start;
     }
 
     flush() {
@@ -252,7 +297,6 @@ function initHandshake(conn) {
     const seed = Buffer.concat([seed1, seed2]);
 
     conn.capabilities = serverCapabilities(system);
-    let buffer = conn.writeBuffer;
     let hs;
     if (useHandshakeV10) hs = new HandshakeV10Packet();
     else hs = new HandshakePacket();
@@ -263,7 +307,7 @@ function initHandshake(conn) {
     hs.serverCharsetIndex = conn.charsetIndex;
     hs.serverStatus = 2;
     hs.restOfScrambleBuff = seed2;
-    hs.write(buffer, conn);
+    hs.write(conn);
 
     return seed;
 }

@@ -56,13 +56,14 @@ class IoHelper {
         });
     }
 
-    static dumpHex(buffer, start = 0, end = -1, indent = '  ') {
+    static dumpHex(buffer, start = 0, end = -1, indent = '  ', limit = 4096) {
         let s = '';
         let b = buffer;
         
         if (end === -1) {
             end = b.length;
         }
+        end = Math.min(end, limit);
         if (start > 0 || end !== b.length) {
             b = b.slice(start, end);
             start = 0; // reset indexes

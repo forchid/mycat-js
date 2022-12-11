@@ -56,6 +56,7 @@ class SchemaConfig {
 
     get name() { return this.#name; }
 
+    /** The default data node. */
     get dataNode() { return this.#dataNode; }
 
     /** A map: table name -> table config. */

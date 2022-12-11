@@ -6,7 +6,7 @@ const zlib = require('zlib');
 
 class CompressHelper {
 
-    static #MIN_COMPRESS_LENGTH = 50;
+    static #MIN_COMPRESS_LENGTH = 1536; // TCP-IP single packet
 
     constructor () {
         throw new UnsupportedError('CompressHelper()');
@@ -19,9 +19,8 @@ class CompressHelper {
         let uncLen = m.readUInt24();
 
         if (uncLen === 0) {
-            let r = Buffer.allocUnsafe(4 + payloadLen);
-            buffer.copy(r, 0, 0, 4);
-            buffer.copy(r, 4, 7);
+            let r = Buffer.allocUnsafe(payloadLen);
+            buffer.copy(r, 0, 7);
             return [r];
         } else {
             let bundle = this.decompress(buffer, 7, payloadLen);
@@ -33,9 +32,12 @@ class CompressHelper {
      * 
      * @param buffer A buffer, or buffer array
      * @param length Buffer length, or buffer array length
+     * @param minCompLen Min compress length, default 1536
+     * 
      * @returns The compressed buffer
      */
-    static compressMysqlPacket(buffer, length = -1) {
+    static compressMysqlPacket(buffer, length = -1, 
+            minCompLen = CompressHelper.#MIN_COMPRESS_LENGTH) {
         if (buffer instanceof Array) {
             if (length !== -1) 
                 buffer = buffer.slice(0, length);
@@ -45,13 +47,13 @@ class CompressHelper {
             length = buffer.length;
         }
 
-        if (length < this.#MIN_COMPRESS_LENGTH) {
-            let n = 3 + length;
+        if (length < minCompLen) {
+            let n = 7 + length;
             let r = Buffer.allocUnsafe(n);
             buffer.copy(r, 0, 0, 4); // copy head
+            BufferHelper.writeUInt24LE(r, length);
             r.fill(0, 4, 7); // fill un-comp length
-            buffer.copy(r, 7, 4); // copy payload
-            BufferHelper.writeUInt24LE(r, n - 7);
+            buffer.copy(r, 7, 0); // copy packet
             return r;
         } else {
             let sq = buffer.readUInt8(3); 

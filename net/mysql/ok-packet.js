@@ -27,34 +27,33 @@ class OkPacket extends MysqlPacket {
         size += 4;
         let m = this.message;
         if (m) {
-            size += MysqlMessage.lengthEncodedOf(m);
-            size += m.length;
+            size += MysqlMessage.bufferLength(m);
         }
 
         return size;
     }
 
-    write(frontConn) {
-        let length = this.calcPayloadLength();
-        let buffer = frontConn.writeBuffer();
-        let p = 0;
+    write(frontConn, offset = 0, flush = true) {
+        let payloadLen = this.payloadLength = this.calcPayloadLength();
+        let packetLen = frontConn.packetHeaderSize + payloadLen;
+        let p = offset;
 
-        frontConn.ensureSize(buffer, 4 + length);
-        BufferHelper.writeUInt24LE(buffer, length, p);
-        buffer.writeUInt8(this.sequenceId, p++);
+        let buffer = frontConn.ensureWriteBuffer(p + packetLen);
+        p = BufferHelper.writeUInt24LE(buffer, payloadLen, p);
+        p = buffer.writeUInt8(this.sequenceId, p);
 
-        buffer.writeInt8(this.fieldCount, p++);
-        p += MysqlMessage.writeLengthEncodedInt(buffer, this.affectedRows, p);
-        p += MysqlMessage.writeLengthEncodedInt(buffer, this.insertId, p);
-        buffer.writeUInt16LE(this.serverStatus, p);
-        p += 2;
-        buffer.writeUInt16LE(this.warningCount, p);
-        p += 2;
+        p = buffer.writeInt8(this.fieldCount, p);
+        p = MysqlMessage.writeLengthEncoded(buffer, this.affectedRows, p);
+        p = MysqlMessage.writeLengthEncoded(buffer, this.insertId, p);
+        p = buffer.writeUInt16LE(this.serverStatus, p);
+        p = buffer.writeUInt16LE(this.warningCount, p);
         let m = this.message;
         if (m) {
-            p += MysqlMessage.writeBytesWithLength(buffer, m, p);
+            p = MysqlMessage.writeBytesWithLength(buffer, m, p);
         }
-        frontConn.send(buffer, 0, p, this);
+        
+        if (flush) return frontConn.send(buffer, offset, p, this);
+        else return p;
     }
 
 }

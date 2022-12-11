@@ -78,7 +78,7 @@ class BufferPool {
         if (size < 0) throw new ArgumentError(`size(${size}) less than 0`);
         if (!buffer._allocated) {
             buffer.resize(size);
-            return;
+            return buffer;
         }
 
         let length = buffer.length;
@@ -100,6 +100,7 @@ class BufferPool {
             buffer.resize(size);
             this.#allocated += size - length;
         }
+        return buffer;
     }
 
     release(buffer) {

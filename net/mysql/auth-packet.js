@@ -51,7 +51,8 @@ class AuthPacket extends MysqlPacket {
         if (this.clientFlags & Capabilities.CLIENT_MULTI_STATEMENTS) {
             this.allowMultiStatements = true;
         }
-
+        
+        // Client max packet size limit
         this.maxPacketSize = m.readUInt32();
         this.charsetIndex = m.readUInt8();
         m.skip(AuthPacket.#FILLER.length);
